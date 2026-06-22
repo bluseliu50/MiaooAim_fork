@@ -1,0 +1,55 @@
+# Build output
+build/
+sdkconfig
+sdkconfig.old
+
+# ESP-IDF managed components (auto-downloaded)
+managed_components/
+dependencies.lock
+
+# IDE / Editor
+.vscode/*
+!.vscode/settings.json
+.idea/
+.cursor/
+project.private.config.json
+*.swp
+*.swo
+*~
+
+# Separate projects kept next to this firmware checkout
+/shuimoping/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+
+# Temporary / Debug
+*.log
+.tmp/
+
+# Generated assets / scratch outputs (logo previews, cutouts, PPT material,
+# bundled python deps, etc.) - not part of the firmware source.
+output/
+outputs/
+.playwright-cli/
+$dst/
+
+# Local font cache used only when regenerating font_data.h
+tools/fonts/
+spiffs_image/
+
+# Local reference clones (not part of firmware)
+otto-robot/
+E-Paper_ESP32_Driver_Board_Code/
+
+# Local original media/reference files. Public README uses docs/images/.
+复刻所需物料图/
+水墨屏内部图/
+水墨屏原理图/
+水墨屏实物展示/
+网页效果展示图片/

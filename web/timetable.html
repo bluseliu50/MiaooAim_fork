@@ -1,0 +1,509 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>课程表管理</title>
+<script>(function(){document.documentElement.setAttribute('data-theme',localStorage.getItem('epd_theme')||'loopy')})()</script>
+<style>
+[data-theme="loopy"]{
+  --bg:#FFF0F5;--g1:rgba(255,182,203,.32);--g2:rgba(173,216,250,.28);
+  --cd:#fff;--cb:rgba(255,155,179,.22);--ch:rgba(255,155,179,.10);--cs:0 6px 28px rgba(255,155,179,.13);
+  --sf:rgba(255,236,245,.75);--sb:rgba(255,155,179,.20);
+  --tx:#5A3050;--t2:rgba(120,70,100,.62);
+  --ac:#FF9BB3;--a2:#8CC8F0;--ag:rgba(255,155,179,.28);
+  --bt:#fff;--ok:#2E9E52;--er:#E53935;--wn:#E68A00;
+  --hv:rgba(255,155,179,.10);--tg:rgba(255,155,179,.22);
+}
+[data-theme="kitty"]{
+  --bg:#FFF8F8;--g1:rgba(255,77,109,.18);--g2:rgba(255,215,0,.14);
+  --cd:#fff;--cb:rgba(255,77,109,.17);--ch:rgba(255,77,109,.07);--cs:0 6px 28px rgba(255,77,109,.10);
+  --sf:rgba(255,245,247,.8);--sb:rgba(255,77,109,.14);
+  --tx:#4A1525;--t2:rgba(130,50,70,.58);
+  --ac:#FF4D6D;--a2:#FFB347;--ag:rgba(255,77,109,.24);
+  --bt:#fff;--ok:#2E9E52;--er:#D32F2F;--wn:#E68A00;
+  --hv:rgba(255,77,109,.07);--tg:rgba(255,77,109,.15);
+}
+[data-theme="lotso"]{
+  --bg:#FBF0F3;--g1:rgba(183,70,120,.20);--g2:rgba(232,160,184,.18);
+  --cd:#fff;--cb:rgba(183,70,120,.17);--ch:rgba(183,70,120,.07);--cs:0 6px 28px rgba(183,70,120,.10);
+  --sf:rgba(251,238,244,.8);--sb:rgba(183,70,120,.14);
+  --tx:#4A1428;--t2:rgba(120,40,70,.58);
+  --ac:#B74678;--a2:#E8A0B8;--ag:rgba(183,70,120,.24);
+  --bt:#fff;--ok:#2E9E52;--er:#C62828;--wn:#E68A00;
+  --hv:rgba(183,70,120,.07);--tg:rgba(183,70,120,.15);
+}
+*{box-sizing:border-box;transition:background-color .35s,border-color .35s,color .3s}
+body{margin:0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  background:radial-gradient(1200px 800px at 20% -10%,var(--g1),transparent 60%),
+  radial-gradient(900px 600px at 100% 0%,var(--g2),transparent 55%),var(--bg);
+  color:var(--tx);min-height:100vh}
+.wrap{max-width:1200px;margin:0 auto;padding:20px 16px}
+.hdr{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap}
+.title{font-weight:800;letter-spacing:.2px;font-size:20px}
+.pill{font-size:12px;color:var(--t2);padding:7px 11px;border:1px solid var(--cb);border-radius:999px;background:var(--sf);text-decoration:none}
+.pill:hover{color:var(--ac);border-color:var(--ac)}
+.nav{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.nav a{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:12px;font-size:13px;font-weight:700;
+  color:var(--tx);background:var(--cd);border:1px solid var(--cb);text-decoration:none;transition:all .2s;white-space:nowrap}
+.nav a:hover{border-color:var(--ac);background:var(--hv);transform:translateY(-1px)}
+.nav a.active{border-color:var(--ac);color:var(--ac);background:var(--hv);box-shadow:0 2px 8px var(--ag)}
+.nav .ni{font-size:15px}
+.card{background:var(--cd);border:1px solid var(--cb);border-radius:18px;overflow:hidden;box-shadow:var(--cs);margin-bottom:14px}
+.card .hd{padding:16px;background:linear-gradient(180deg,var(--ch),transparent)}
+.card .bd{padding:16px}
+.sub{color:var(--t2);font-size:13px;line-height:1.5}
+.btn{cursor:pointer;border:0;border-radius:12px;padding:10px 14px;font-weight:700;font-size:13px;color:var(--bt);
+  background:linear-gradient(135deg,var(--ac),var(--a2));box-shadow:0 6px 20px var(--ag);transition:filter .2s,transform .15s}
+.btn:hover{filter:brightness(1.06);transform:translateY(-1px)}
+.btn.ghost{background:var(--sf);color:var(--tx);border:1px solid var(--cb);box-shadow:none}
+.btn.ghost:hover{background:var(--hv);border-color:var(--ac)}
+.btn.sm{padding:6px 10px;font-size:12px;border-radius:8px}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+@media(max-width:600px){
+  .row-cfg{flex-direction:column;align-items:stretch;gap:8px}
+  .row-cfg label{margin-left:0!important}
+  .row-cfg input,.row-cfg select{width:100%!important}
+  .row-btns{gap:6px}
+  .row-btns .btn,.row-btns select,.row-btns label{flex:1 1 calc(50% - 6px);min-width:0;text-align:center;font-size:12px;padding:10px 6px}
+}
+.toggle{display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.toggle input{display:none}
+.toggle .track{width:44px;height:24px;background:var(--sb);border-radius:99px;position:relative;transition:background .3s}
+.toggle .thumb{position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .3s;box-shadow:0 2px 4px rgba(0,0,0,.2)}
+.toggle input:checked+.track{background:var(--ac)}
+.toggle input:checked+.track .thumb{transform:translateX(20px)}
+input[type="text"],input[type="number"],input[type="date"]{padding:8px 10px;border:1px solid var(--sb);border-radius:8px;background:var(--sf);color:var(--tx);font-size:13px}
+input:focus{outline:none;border-color:var(--ac)}
+select{padding:8px 10px;border:1px solid var(--sb);border-radius:8px;background:var(--sf);color:var(--tx);font-size:13px}
+.log{margin-top:10px;font-family:ui-monospace,monospace;font-size:12px;
+  background:var(--sf);border:1px solid var(--sb);border-radius:12px;padding:10px;min-height:48px;white-space:pre-wrap}
+.ok{color:var(--ok)}.bad{color:var(--er)}.warn{color:var(--wn)}
+
+/* period list */
+.period-row{display:flex;gap:6px;align-items:center;margin-bottom:6px;padding:6px;background:var(--sf);border-radius:8px;border:1px solid var(--sb)}
+.period-row span{font-size:13px;font-weight:600;min-width:32px}
+.period-row input{width:50px;text-align:center;padding:5px 4px;font-size:12px}
+
+/* grid table */
+.tt-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px}
+.tt-table th{background:var(--ac);color:#fff;padding:8px 4px;font-weight:700;font-size:12px;border:1px solid rgba(255,255,255,.3)}
+.tt-table th.period-col{width:50px;background:var(--a2)}
+.tt-table td{border:1px solid var(--sb);padding:4px;vertical-align:top;cursor:pointer;min-height:40px;height:48px;position:relative}
+.tt-table td:hover{background:var(--hv)}
+.tt-table td.has-course{background:var(--ch)}
+.cell-name{font-weight:700;font-size:12px;line-height:1.3}
+.cell-room{font-size:11px;color:var(--t2)}
+.cell-weeks{font-size:10px;color:var(--ac);opacity:.8}
+.cell-empty{color:var(--t2);opacity:.4;font-size:11px;text-align:center;padding-top:10px}
+
+/* edit modal */
+.modal-bg{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.35);z-index:100;align-items:center;justify-content:center}
+.modal-bg.active{display:flex}
+.modal{background:var(--cd);border-radius:18px;padding:24px;width:340px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal h3{margin:0 0 16px;font-size:16px}
+.modal label{display:block;font-size:13px;font-weight:600;margin:10px 0 4px}
+.modal input[type="text"]{width:100%}
+.modal .actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+.epd-credit{margin-top:20px;padding-top:14px;border-top:1px solid var(--cb);font-size:12px;color:var(--t2);text-align:center;line-height:1.6}
+.epd-credit strong{color:var(--tx);font-weight:700}
+.epd-credit a{color:var(--ac);font-weight:600;text-decoration:none}
+.epd-credit a:hover{text-decoration:underline}
+/* Unified page navigation */
+.nav{width:min(1180px,calc(100vw - 32px));display:flex;align-items:center;gap:8px;margin:0 0 18px 50%;padding:8px;overflow-x:auto;flex-wrap:nowrap;border-radius:18px;background:rgba(255,255,255,.60);border:1px solid var(--cb);box-shadow:0 8px 22px rgba(255,155,179,.10);scrollbar-width:none;-webkit-overflow-scrolling:touch;transform:translateX(-50%)}
+.nav::-webkit-scrollbar{display:none}
+.nav a{flex:0 0 auto;min-height:38px;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:0 13px;border-radius:12px;font-size:13px;font-weight:800;line-height:1;color:var(--tx);background:rgba(255,255,255,.78);border:1px solid var(--cb);text-decoration:none;white-space:nowrap;box-shadow:0 4px 12px rgba(255,155,179,.08)}
+.nav .ni{width:18px;min-width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:15px;line-height:1}
+.nav a:hover,.nav a.active{color:var(--ac);border-color:var(--ac);background:var(--hv);transform:translateY(-1px);box-shadow:0 0 0 2px var(--ag)}
+@media(max-width:640px){.nav{width:calc(100vw - 24px);padding:7px;gap:7px;border-radius:16px}.nav a{min-height:36px;padding:0 11px;font-size:12px}}
+</style>
+<style id="unified-shell-v2">
+/* Unified app shell v2: keep page size, nav, cards and form rhythm consistent. */
+body{overflow-y:scroll}
+body .wrap{width:min(1180px,calc(100vw - 32px));max-width:1180px!important;margin:0 auto!important;padding:24px 0 36px!important}
+body.page-upload .wrap{width:min(1180px,calc(100vw - 32px));max-width:1180px!important}
+body.page-config .wrap,body.page-board .wrap{width:min(1380px,calc(100vw - 36px));max-width:1380px!important}
+body.page-config .page{width:min(1180px,calc(100vw - 32px))!important;max-width:1180px!important;margin:24px auto 36px!important}
+body.page-board{overflow:hidden}
+body .hdr{width:100%;min-height:46px;margin:0 0 16px!important;align-items:center}
+body .hdr .title{line-height:1.25}
+body .nav{width:min(1180px,100%)!important;max-width:100%!important;margin:0 auto 20px!important;transform:none!important;justify-content:center!important}
+body .nav a{flex:0 0 88px!important;width:88px!important;min-width:88px!important;max-width:88px!important;padding:0 6px!important;gap:5px!important;overflow:hidden!important}
+body .card{border-radius:16px!important}
+body.page-panel .card,body.page-task .card{width:100%;margin-left:auto!important;margin-right:auto!important}
+body.page-panel .wrap>.row,body.page-panel .wrap>.log,body.page-task .wrap>.row,body.page-task .wrap>.log{width:100%;margin-left:auto!important;margin-right:auto!important}
+body.page-panel .card .hd,body.page-task .card .hd{padding:20px 22px 12px!important}
+body.page-panel .card .bd,body.page-task .card .bd{padding:18px 22px 22px!important}
+body.page-panel .card .bd{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px;align-items:start}
+body.page-panel .card .bd>.kv,body.page-panel .card .bd>.row,body.page-panel .card .bd>.log{grid-column:1/-1}
+body.page-panel .card .bd>.form-row{margin-bottom:0!important}
+body.page-panel select,body.page-panel input[type=text],body.page-panel input[type=password],body.page-panel input[type=number],body.page-panel textarea{max-width:none!important}
+body.page-panel #cityResults{max-width:none!important}
+body.page-task .wrap>.row{margin-top:16px}
+body.page-upload .card,body.page-config .card{width:100%}
+body.page-gallery .card,body.page-timetable .card{width:100%;margin-left:auto!important;margin-right:auto!important}
+body.page-gallery .wrap>.row,body.page-gallery .wrap>.log,body.page-timetable .wrap>.row,body.page-timetable .wrap>.log{width:100%;margin-left:auto!important;margin-right:auto!important}
+body .epd-credit{width:100%;max-width:100%!important;margin-left:auto!important;margin-right:auto!important}
+@media(max-width:760px){body .wrap,body.page-upload .wrap{width:calc(100vw - 24px);padding:16px 0 28px!important}body.page-config .page{width:calc(100vw - 24px)!important;margin-top:16px!important}body.page-panel .card .bd{grid-template-columns:1fr}body .nav{margin-bottom:16px!important;justify-content:flex-start!important}}
+</style>
+</head>
+<body class="page-shell page-wide page-timetable">
+<div class="wrap">
+  <div class="hdr">
+    <div class="title">课程表管理</div>
+    </div>
+
+  <div class="nav">
+    <a href="/"><span class="ni">🖼</span> 上传</a>
+    <a href="/gallery"><span class="ni">🔁</span> 轮播</a>
+    <a href="/weather"><span class="ni">🌤</span> 天气</a>
+    <a href="/clock"><span class="ni">🕐</span> 时钟</a>
+    <a href="/calendar"><span class="ni">🗓</span> 日历</a>
+    <a href="/timetable" class="active"><span class="ni">📅</span> 课程表</a>
+    <a href="/todo"><span class="ni">✅</span> 待办</a>
+    <a href="/countdown"><span class="ni">⏳</span> 倒计时</a>
+    <a href="/message"><span class="ni">💬</span> 文字留言</a>
+    <a href="/board"><span class="ni">🎨</span> 画布留言</a>
+    <a href="/codex"><span class="ni">📊</span> 额度</a>
+    <a href="/config"><span class="ni">⚙</span> 设备配置</a>
+  </div>
+
+  <!-- controls -->
+  <div class="card">
+    <div class="hd">
+      <div class="row">
+        <span class="title" style="font-size:16px">总开关</span>
+        <label class="toggle"><input type="checkbox" id="chkEnabled"><div class="track"><div class="thumb"></div></div></label>
+      </div>
+    </div>
+    <div class="bd">
+      <div class="row row-cfg">
+        <label style="font-size:13px;font-weight:600">学期开始日期</label>
+        <input type="date" id="inpSemStart" style="width:160px">
+        <label style="font-size:13px;font-weight:600;margin-left:12px">显示天数</label>
+        <select id="selDays"><option value="5">周一至周五</option><option value="7">周一至周日</option></select>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <span class="sub" id="weekInfo"></span>
+      </div>
+      <div class="row row-btns" style="margin-top:10px">
+        <button class="btn" onclick="saveConfig()">保存配置</button>
+        <button class="btn ghost" onclick="loadConfig()">重新加载</button>
+        <select id="selShowDay" style="padding:8px 10px;border-radius:10px;border:1px solid var(--cb);background:var(--sf);color:var(--tx);font-size:13px">
+          <option value="-1">今天</option>
+          <option value="0">周一</option>
+          <option value="1">周二</option>
+          <option value="2">周三</option>
+          <option value="3">周四</option>
+          <option value="4">周五</option>
+          <option value="5">周六</option>
+          <option value="6">周日</option>
+        </select>
+        <button class="btn ghost" onclick="showOnEpd()">推送到屏幕</button>
+        <button class="btn ghost" onclick="exportTimetable()">导出</button>
+        <label class="btn ghost" style="cursor:pointer">导入<input type="file" accept=".json" style="display:none" onchange="importTimetable(this)"></label>
+        <button class="btn ghost" onclick="clearAll()" style="color:var(--er)">清空</button>
+      </div>
+      <div class="log" id="log">就绪。</div>
+    </div>
+  </div>
+
+  <!-- period definitions -->
+  <div class="card">
+    <div class="hd">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><div class="title" style="font-size:16px">节次时间</div><div class="sub">定义每节课的上下课时间（所有天共用）</div></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn sm ghost" onclick="addPeriod()">+ 添加节次</button>
+          <button class="btn sm ghost" onclick="applyTemplate()">套用模板</button>
+        </div>
+    </div>
+    </div>
+    <div class="bd" id="periodList"></div>
+  </div>
+
+  <!-- grid -->
+  <div class="card">
+    <div class="hd"><div class="title" style="font-size:16px">课程安排</div><div class="sub">点击单元格添加或编辑课程。</div></div>
+    <div class="bd" style="overflow-x:auto">
+      <table class="tt-table" id="gridTable"></table>
+    </div>
+  </div>
+  <footer class="epd-credit" role="contentinfo">由 <strong>喵喵</strong> 设计并开发 · 智能墨水屏终端 · <a href="https://gitee.com/gxp666111/miaomiao" target="_blank" rel="noopener noreferrer">源码仓库</a></footer>
+</div>
+
+<!-- edit modal -->
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <h3 id="modalTitle">编辑课程</h3>
+    <label>课程名称</label>
+    <input type="text" id="mName" maxlength="39" placeholder="如：高等数学">
+    <label>教室</label>
+    <input type="text" id="mRoom" maxlength="19" placeholder="如：A101">
+    <label>上课周次</label>
+    <input type="text" id="mWeeks" placeholder="如：1-16 或 1,3,5,7 或留空=全部">
+    <div class="sub" style="margin-top:4px">支持格式：1-16, 1,3,5,7-9, 留空表示每周都上</div>
+    <div class="actions">
+      <button class="btn ghost sm" onclick="deleteCell()" id="btnDel" style="color:var(--er);margin-right:auto">删除</button>
+      <button class="btn ghost sm" onclick="closeModal()">取消</button>
+      <button class="btn sm" onclick="saveCell()">确定</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function epdAuthHeaders(){
+  try{
+    var u=localStorage.getItem('epd_auth_u');
+    var p=localStorage.getItem('epd_auth_p');
+    if(u!=null&&p!=null&&u!==''&&p!=='')
+      return {'Authorization':'Basic '+btoa(unescape(encodeURIComponent(u+':'+p)))};
+  }catch(e){}
+  return {};
+}
+function epdFetchOpts(extra){
+  extra=extra||{};
+  var h=Object.assign({},epdAuthHeaders(),extra.headers||{});
+  return Object.assign({},extra,{headers:h});
+}
+const DAYS=['一','二','三','四','五','六','日'];
+let cfg={enabled:false,period_count:0,show_days:5,semester_start:0,periods:[],grid:[]};
+let editDay=-1,editPeriod=-1;
+
+function log(s,cls){const el=document.getElementById('log');el.className='log'+(cls?' '+cls:'');el.textContent=s}
+
+function initGrid(){
+  cfg.grid=[];
+  for(let d=0;d<7;d++){
+    cfg.grid[d]=[];
+    for(let p=0;p<cfg.period_count;p++) cfg.grid[d][p]=null;
+  }
+}
+
+function renderPeriods(){
+  const el=document.getElementById('periodList');
+  if(!cfg.periods||cfg.periods.length===0){el.innerHTML='<div class="sub">暂无节次，请点击「添加节次」或「套用模板」。</div>';return}
+  el.innerHTML=cfg.periods.map((p,i)=>`
+    <div class="period-row">
+      <span>第${i+1}节</span>
+      <input type="number" min="0" max="23" value="${p.start_hour}" onchange="updPeriod(${i},'start_hour',this.value)">:
+      <input type="number" min="0" max="59" value="${p.start_minute}" onchange="updPeriod(${i},'start_minute',this.value)">
+      <span style="margin:0 4px">—</span>
+      <input type="number" min="0" max="23" value="${p.end_hour}" onchange="updPeriod(${i},'end_hour',this.value)">:
+      <input type="number" min="0" max="59" value="${p.end_minute}" onchange="updPeriod(${i},'end_minute',this.value)">
+      <button class="btn ghost sm" onclick="removePeriod(${i})" style="margin-left:auto;color:var(--er)">×</button>
+    </div>`).join('');
+}
+
+function updPeriod(i,k,v){cfg.periods[i][k]=parseInt(v)||0;renderPeriods()}
+
+function addPeriod(){
+  let last=cfg.periods.length>0?cfg.periods[cfg.periods.length-1]:null;
+  let sh=last?last.end_hour:8,sm=last?last.end_minute+10:0;
+  if(sm>=60){sh++;sm-=60}
+  cfg.periods.push({start_hour:sh,start_minute:sm,end_hour:sh,end_minute:sm+45>=60?sm+45-60:sm+45});
+  if(sm+45>=60) cfg.periods[cfg.periods.length-1].end_hour++;
+  cfg.period_count=cfg.periods.length;
+  for(let d=0;d<7;d++){while(cfg.grid[d].length<cfg.period_count)cfg.grid[d].push(null)}
+  renderPeriods();renderGrid();
+}
+
+function removePeriod(i){
+  cfg.periods.splice(i,1);
+  cfg.period_count=cfg.periods.length;
+  for(let d=0;d<7;d++) cfg.grid[d].splice(i,1);
+  renderPeriods();renderGrid();
+}
+
+function applyTemplate(){
+  if(cfg.periods.length>0&&!confirm('将覆盖当前节次定义，确定？'))return;
+  cfg.periods=[
+    {start_hour:8,start_minute:0,end_hour:8,end_minute:45},
+    {start_hour:8,start_minute:55,end_hour:9,end_minute:40},
+    {start_hour:10,start_minute:0,end_hour:10,end_minute:45},
+    {start_hour:10,start_minute:55,end_hour:11,end_minute:40},
+    {start_hour:14,start_minute:0,end_hour:14,end_minute:45},
+    {start_hour:14,start_minute:55,end_hour:15,end_minute:40},
+    {start_hour:16,start_minute:0,end_hour:16,end_minute:45},
+    {start_hour:16,start_minute:55,end_hour:17,end_minute:40},
+    {start_hour:19,start_minute:0,end_hour:19,end_minute:45},
+    {start_hour:19,start_minute:55,end_hour:20,end_minute:40},
+  ];
+  cfg.period_count=cfg.periods.length;
+  for(let d=0;d<7;d++){cfg.grid[d]=[];for(let p=0;p<cfg.period_count;p++)cfg.grid[d].push(null)}
+  renderPeriods();renderGrid();
+  log('已套用标准10节模板','ok');
+}
+
+function renderGrid(){
+  const cols=parseInt(document.getElementById('selDays').value)||5;
+  let html='<thead><tr><th class="period-col">节次</th>';
+  for(let d=0;d<cols;d++) html+=`<th>周${DAYS[d]}</th>`;
+  html+='</tr></thead><tbody>';
+
+  for(let p=0;p<cfg.period_count;p++){
+    const pd=cfg.periods[p];
+    const timeStr=`${String(pd.start_hour).padStart(2,'0')}:${String(pd.start_minute).padStart(2,'0')}`;
+    html+=`<tr><td style="text-align:center;font-weight:700;background:var(--sf);font-size:12px"><div>${p+1}</div><div style="font-size:10px;color:var(--t2);font-weight:400">${timeStr}</div></td>`;
+    for(let d=0;d<cols;d++){
+      const c=cfg.grid[d]&&cfg.grid[d][p];
+      if(c&&c.name){
+        html+=`<td class="has-course" onclick="openModal(${d},${p})">
+          <div class="cell-name">${esc(c.name)}</div>
+          <div class="cell-room">${esc(c.room||'')}</div>
+          <div class="cell-weeks">${esc(c.weeks||'')}</div></td>`;
+      } else {
+        html+=`<td onclick="openModal(${d},${p})"><div class="cell-empty">+</div></td>`;
+      }
+    }
+    html+='</tr>';
+  }
+  html+='</tbody>';
+  document.getElementById('gridTable').innerHTML=html;
+}
+
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+function openModal(d,p){
+  editDay=d;editPeriod=p;
+  const c=cfg.grid[d]&&cfg.grid[d][p];
+  document.getElementById('mName').value=c?c.name:'';
+  document.getElementById('mRoom').value=c?c.room:'';
+  document.getElementById('mWeeks').value=c?c.weeks||'':'';
+  document.getElementById('btnDel').style.display=(c&&c.name)?'inline-block':'none';
+  document.getElementById('modalTitle').textContent=`周${DAYS[d]} 第${p+1}节`;
+  document.getElementById('modalBg').classList.add('active');
+  document.getElementById('mName').focus();
+}
+
+function closeModal(){document.getElementById('modalBg').classList.remove('active');editDay=-1;editPeriod=-1}
+
+function saveCell(){
+  const name=document.getElementById('mName').value.trim();
+  if(!name){deleteCell();return}
+  if(!cfg.grid[editDay])cfg.grid[editDay]=[];
+  cfg.grid[editDay][editPeriod]={
+    name:name,
+    room:document.getElementById('mRoom').value.trim(),
+    weeks:document.getElementById('mWeeks').value.trim()
+  };
+  closeModal();renderGrid();
+}
+
+function deleteCell(){
+  if(cfg.grid[editDay])cfg.grid[editDay][editPeriod]=null;
+  closeModal();renderGrid();
+}
+
+function clearAll(){
+  if(!confirm('确定清空所有课程？'))return;
+  for(let d=0;d<7;d++){cfg.grid[d]=[];for(let p=0;p<cfg.period_count;p++)cfg.grid[d].push(null)}
+  renderGrid();log('已清空','ok');
+}
+
+function exportTimetable(){
+  try{
+    var blob=new Blob([JSON.stringify(cfg,null,2)],{type:'application/json'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='timetable_'+new Date().toISOString().slice(0,10)+'.json';
+    a.click();URL.revokeObjectURL(a.href);
+    log('课程表已导出','ok');
+  }catch(e){log('导出失败：'+e,'bad');}
+}
+
+async function importTimetable(input){
+  if(!input.files.length)return;
+  try{
+    var text=await input.files[0].text();
+    var data=JSON.parse(text);
+    if(!data.periods||!data.grid){log('JSON 格式无效，需包含 periods 和 grid 字段','bad');return;}
+    cfg=data;
+    renderPeriods();renderGrid();
+    document.getElementById('chkEnabled').checked=!!cfg.enabled;
+    if(cfg.semester_start)document.getElementById('inpSemStart').value=cfg.semester_start;
+    if(cfg.days)document.getElementById('selDays').value=String(cfg.days);
+    log('导入成功！请点击「保存配置」写入设备。','ok');
+  }catch(e){log('导入失败：'+e,'bad');}
+  input.value='';
+}
+
+function semesterStartToUnix(dateStr){
+  if(!dateStr)return 0;
+  const d=new Date(dateStr+'T00:00:00');
+  const dow=d.getDay();
+  const mondayOff=(dow===0)?-6:(1-dow);
+  d.setDate(d.getDate()+mondayOff);
+  return Math.floor(d.getTime()/1000);
+}
+
+function unixToDateStr(ts){
+  if(!ts)return'';
+  const d=new Date(ts*1000);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+async function loadConfig(){
+  try{
+    const r=await fetch('/timetable.json',epdFetchOpts({}));
+    const j=await r.json();
+    cfg.enabled=j.enabled||false;
+    cfg.period_count=j.period_count||0;
+    cfg.show_days=j.show_days||5;
+    cfg.semester_start=j.semester_start||0;
+    cfg.periods=j.periods||[];
+    cfg.grid=j.grid||[];
+    for(let d=0;d<7;d++){
+      if(!cfg.grid[d])cfg.grid[d]=[];
+      while(cfg.grid[d].length<cfg.period_count)cfg.grid[d].push(null);
+    }
+    document.getElementById('chkEnabled').checked=cfg.enabled;
+    document.getElementById('inpSemStart').value=unixToDateStr(cfg.semester_start);
+    document.getElementById('selDays').value=String(cfg.show_days);
+
+    const cw=j.current_week||0;
+    document.getElementById('weekInfo').textContent=cw>0?`当前：第${cw}周`:'学期周次未知（请设置开始日期并同步时间）';
+
+    renderPeriods();renderGrid();
+    log('配置已加载','ok');
+  }catch(e){
+    cfg.periods=[];cfg.period_count=0;
+    for(let d=0;d<7;d++)cfg.grid[d]=[];
+    renderPeriods();renderGrid();
+    log('加载失败：'+e,'bad');
+  }
+}
+
+async function saveConfig(){
+  cfg.enabled=document.getElementById('chkEnabled').checked;
+  cfg.show_days=parseInt(document.getElementById('selDays').value)||5;
+  cfg.semester_start=semesterStartToUnix(document.getElementById('inpSemStart').value);
+  cfg.period_count=cfg.periods.length;
+
+  try{
+    const r=await fetch('/timetable',epdFetchOpts({method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)}));
+    const j=await r.json();
+    log(j.ok?'保存成功！':'保存失败',j.ok?'ok':'bad');
+  }catch(e){log('保存失败：'+e,'bad')}
+}
+
+async function showOnEpd(){
+  const day=parseInt(document.getElementById('selShowDay').value);
+  const label=day<0?'今天':['周一','周二','周三','周四','周五','周六','周日'][day];
+  log('正在推送 '+label+' 课程到屏幕…');
+  try{
+    const body=day>=0?JSON.stringify({day}):undefined;
+    const r=await fetch('/timetable_show',epdFetchOpts({method:'POST',
+      headers:body?{'Content-Type':'application/json'}:{},
+      body}));
+    const j=await r.json();
+    log(j.ok?label+' 显示成功':'显示失败：'+(j.msg||''),j.ok?'ok':'bad');
+  }catch(e){log('推送失败：'+e,'bad')}
+}
+
+document.getElementById('selDays').addEventListener('change',renderGrid);
+loadConfig();
+</script>
+</body>
+</html>

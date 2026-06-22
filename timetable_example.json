@@ -1,0 +1,101 @@
+{
+  "enabled": true,
+  "days": [
+    {
+      "day": 0,
+      "slots": [
+        {
+          "name": "高等数学",
+          "start_hour": 8,
+          "start_minute": 0,
+          "end_hour": 9,
+          "end_minute": 35,
+          "room": "A101",
+          "enabled": true
+        },
+        {
+          "name": "大学英语",
+          "start_hour": 10,
+          "start_minute": 0,
+          "end_hour": 11,
+          "end_minute": 35,
+          "room": "B203",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "day": 1,
+      "slots": [
+        {
+          "name": "数据结构",
+          "start_hour": 14,
+          "start_minute": 0,
+          "end_hour": 15,
+          "end_minute": 35,
+          "room": "C305",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "slots": [
+        {
+          "name": "操作系统",
+          "start_hour": 8,
+          "start_minute": 0,
+          "end_hour": 9,
+          "end_minute": 35,
+          "room": "A102",
+          "enabled": true
+        },
+        {
+          "name": "计算机网络",
+          "start_hour": 10,
+          "start_minute": 0,
+          "end_hour": 11,
+          "end_minute": 35,
+          "room": "B201",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "slots": [
+        {
+          "name": "数据库原理",
+          "start_hour": 14,
+          "start_minute": 0,
+          "end_hour": 15,
+          "end_minute": 35,
+          "room": "C301",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "day": 4,
+      "slots": [
+        {
+          "name": "体育",
+          "start_hour": 10,
+          "start_minute": 0,
+          "end_hour": 11,
+          "end_minute": 35,
+          "room": "操场",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "day": 5,
+      "slots": []
+    },
+    {
+      "day": 6,
+      "slots": []
+    }
+  ]
+}

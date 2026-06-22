@@ -1,0 +1,12 @@
+# Extra glyphs to include in main/font_data.h.
+# Keep this file small: the app partition has limited free space.
+# Lines may contain comments after '#'.
+
+喵哎墨水屏
+
+℃ ° · … — – ￥
+： ， 。 ！ ？ ； 、 （ ） 【 】 「 」 『 』 《 》
+“ ” ‘ ’ ✓ ×
+＋ － ＝ ／ ％ ＃ ＠ ＆ ｜ ～ ± ≈ ≤ ≥ → ← ↑ ↓ ★ ☆ ※
+待办 留言 倒计时 课程表 天气 日历 电量 低功耗
+刷新 重启 格式化 图库 画布 屏幕 网络 配置

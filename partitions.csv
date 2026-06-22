@@ -1,0 +1,16 @@
+# Name,     Type, SubType,  Offset,    Size,      Flags
+# NVS is 48KB: stores PHY calibration, Wi-Fi, weather, timetable, todo, clock,
+# countdown, power, basic-auth, panel and other runtime settings.
+# Keep app slots at 3MB for OTA safety.
+# Keep user SPIFFS at 0xC20000 so existing user images/config survive full
+# flashing without erase. The unused gap before it is used for crash dumps and
+# more built-in font space.
+nvs,        data, nvs,      0x9000,    0xC000,
+otadata,    data, ota,      0x15000,   0x2000,
+phy_init,   data, phy,      0x17000,   0x1000,
+factory,    app,  factory,  0x20000,   0x300000,
+ota_0,      app,  ota_0,    0x320000,  0x300000,
+ota_1,      app,  ota_1,    0x620000,  0x300000,
+coredump,   data, coredump, 0x920000,  0x20000,
+fontfs,     data, spiffs,   0x940000,  0x2E0000,
+spiffs,     data, spiffs,   0xC20000,  0x3E0000,

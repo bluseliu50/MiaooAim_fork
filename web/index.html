@@ -1,0 +1,1078 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>墨水屏上传</title>
+<script>(function(){document.documentElement.setAttribute('data-theme',localStorage.getItem('epd_theme')||'loopy')})()</script>
+<style>
+/* ── Theme: Loopy (粉蓝梦幻) ── */
+[data-theme="loopy"]{
+  --bg:#FFF0F5;--g1:rgba(255,182,203,.32);--g2:rgba(173,216,250,.28);
+  --cd:#fff;--cb:rgba(255,155,179,.22);--ch:rgba(255,155,179,.10);--cs:0 6px 28px rgba(255,155,179,.13);
+  --sf:rgba(255,236,245,.75);--sb:rgba(255,155,179,.20);
+  --tx:#5A3050;--t2:rgba(120,70,100,.62);
+  --ac:#FF9BB3;--a2:#8CC8F0;--ag:rgba(255,155,179,.28);
+  --bt:#fff;--ok:#2E9E52;--er:#E53935;--wn:#E68A00;
+  --hv:rgba(255,155,179,.10);--tg:rgba(255,155,179,.22);
+  --deco:"🌸"
+}
+/* ── Theme: Hello Kitty (经典红粉) ── */
+[data-theme="kitty"]{
+  --bg:#FFF8F8;--g1:rgba(255,77,109,.18);--g2:rgba(255,215,0,.14);
+  --cd:#fff;--cb:rgba(255,77,109,.17);--ch:rgba(255,77,109,.07);--cs:0 6px 28px rgba(255,77,109,.10);
+  --sf:rgba(255,245,247,.8);--sb:rgba(255,77,109,.14);
+  --tx:#4A1525;--t2:rgba(130,50,70,.58);
+  --ac:#FF4D6D;--a2:#FFB347;--ag:rgba(255,77,109,.24);
+  --bt:#fff;--ok:#2E9E52;--er:#D32F2F;--wn:#E68A00;
+  --hv:rgba(255,77,109,.07);--tg:rgba(255,77,109,.15);
+  --deco:"🎀"
+}
+/* ── Theme: 草莓熊 (浆果玫瑰) ── */
+[data-theme="lotso"]{
+  --bg:#FBF0F3;--g1:rgba(183,70,120,.20);--g2:rgba(232,160,184,.18);
+  --cd:#fff;--cb:rgba(183,70,120,.17);--ch:rgba(183,70,120,.07);--cs:0 6px 28px rgba(183,70,120,.10);
+  --sf:rgba(251,238,244,.8);--sb:rgba(183,70,120,.14);
+  --tx:#4A1428;--t2:rgba(120,40,70,.58);
+  --ac:#B74678;--a2:#E8A0B8;--ag:rgba(183,70,120,.24);
+  --bt:#fff;--ok:#2E9E52;--er:#C62828;--wn:#E68A00;
+  --hv:rgba(183,70,120,.07);--tg:rgba(183,70,120,.15);
+  --deco:"🍓"
+}
+/* ── Base ── */
+*{box-sizing:border-box;transition:background-color .35s,border-color .35s,color .3s,box-shadow .35s}
+body{margin:0;font-family:'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;
+  background:radial-gradient(1200px 800px at 20% -10%,var(--g1),transparent 60%),
+  radial-gradient(900px 600px at 100% 0%,var(--g2),transparent 55%),var(--bg);
+  color:var(--tx);min-height:100vh}
+.wrap{max-width:1380px;margin:0 auto;padding:24px 18px}
+.hdr{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap}
+.title{font-weight:800;letter-spacing:.2px;font-size:20px}
+.pill{font-size:12px;color:var(--t2);padding:7px 11px;border:1px solid var(--cb);border-radius:999px;background:var(--sf);white-space:nowrap}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,390px);gap:20px;align-items:start}
+/* ── Cards ── */
+.card{position:relative;background:var(--cd);border:1px solid var(--cb);border-radius:18px;overflow:hidden;box-shadow:var(--cs)}
+.card .hd{position:relative;padding:18px 20px 8px;background:linear-gradient(180deg,var(--ch),transparent)}
+.card .hd::after{content:var(--deco);position:absolute;top:12px;right:14px;font-size:16px;opacity:.55;pointer-events:none}
+.card .bd{padding:18px 20px 20px}
+.sub{color:var(--t2);font-size:13px;line-height:1.5}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+input[type=file]{padding:10px;background:var(--sf);border:1px solid var(--sb);color:var(--tx);border-radius:12px;max-width:220px;font-size:13px}
+/* ── Buttons ── */
+.btn{cursor:pointer;border:0;border-radius:12px;padding:10px 14px;font-weight:700;font-size:13px;color:var(--bt);
+  background:linear-gradient(135deg,var(--ac),var(--a2));box-shadow:0 6px 20px var(--ag);transition:filter .2s,transform .15s}
+.btn:hover{filter:brightness(1.06);transform:translateY(-1px)}
+.btn.ghost{background:var(--sf);color:var(--tx);border:1px solid var(--cb);box-shadow:none}
+.btn.ghost:hover{background:var(--hv);border-color:var(--ac)}
+.btn.sm{padding:6px 10px;font-size:12px;border-radius:8px}
+.btn:disabled{opacity:.55;cursor:not-allowed;transform:none;filter:none}
+/* ── Data ── */
+.kv{display:grid;grid-template-columns:130px 1fr;gap:8px 12px;font-size:13px}
+.k{color:var(--t2)}.v{font-weight:700}
+.log{margin-top:12px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;
+  background:var(--sf);border:1px solid var(--sb);border-radius:12px;padding:12px;min-height:86px;white-space:pre-wrap}
+.ok{color:var(--ok)}.bad{color:var(--er)}
+.bar-wrap{height:6px;background:var(--sb);border-radius:3px;margin-top:6px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;transition:width .4s}
+/* ── Gallery ── */
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:8px}
+.gcard{background:var(--sf);border:1px solid var(--sb);border-radius:14px;overflow:hidden;transition:transform .15s,border-color .2s}
+.gcard:hover{border-color:var(--ac);transform:translateY(-2px)}
+.gthumb{position:relative;aspect-ratio:4/3;background:rgba(0,0,0,.04);overflow:hidden}
+.gcard img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:rgba(0,0,0,.04)}
+.gthumb img{height:100%;aspect-ratio:auto}
+.gthumb .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:10px;color:var(--t2);font-size:12px;line-height:1.45;background:rgba(255,255,255,.36)}
+.gthumb.loaded .ph{display:none}
+.gthumb.fail .ph{color:var(--er);background:rgba(229,57,53,.06)}
+.gcard .ginfo{padding:8px 10px 4px;display:flex;justify-content:space-between;align-items:center}
+.gcard .gname{font-size:11px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px}
+.gcard .gsz{font-size:11px;font-weight:700;color:var(--tx)}
+.gcard .gactions{padding:4px 10px 10px;display:flex;gap:6px}
+.empty{text-align:center;padding:32px;color:var(--t2);font-size:14px}
+.fullcard{margin-top:0}
+.stack-col{display:flex;flex-direction:column;gap:18px;min-width:0}
+.status-card{position:sticky;top:18px}
+.upload-card{overflow:visible}
+/* ── Nav Bar ── */
+.nav{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.nav a{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:12px;font-size:13px;font-weight:700;
+  color:var(--tx);background:var(--cd);border:1px solid var(--cb);text-decoration:none;transition:all .2s;white-space:nowrap}
+.nav a:hover{border-color:var(--ac);background:var(--hv);transform:translateY(-1px)}
+.nav a.active{border-color:var(--ac);color:var(--ac);background:var(--hv);box-shadow:0 2px 8px var(--ag)}
+.nav .ni{font-size:15px}
+/* ── Dashboard ── */
+.dash{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:10px;margin-bottom:22px}
+.dash-item{background:rgba(255,255,255,.86);border:1px solid var(--cb);border-radius:16px;padding:13px 8px;text-align:center;min-height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 5px 18px rgba(255,155,179,.07)}
+.dash-icon{font-size:21px;margin-bottom:6px}
+.dash-label{font-size:11px;color:var(--t2)}
+.dash-value{font-size:15px;font-weight:800;margin-top:3px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.upload-bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}
+.upload-card input[type=file]{width:100%;max-width:none;min-width:0}
+.preview-wrap{--preview-pane-max:420px;display:grid;grid-template-columns:minmax(240px,var(--preview-pane-max)) minmax(320px,1fr);gap:18px;margin-top:16px;align-items:start}
+.preview-pane{display:grid;gap:10px;min-width:0;width:100%;max-width:var(--preview-pane-max);position:sticky;top:18px;z-index:2}
+.preview-stage{width:100%;aspect-ratio:var(--preview-aspect,128/296);background:linear-gradient(180deg,#fff,var(--sf));border:1px solid var(--sb);border-radius:14px;padding:14px;display:flex;justify-content:center;align-items:center;overflow:hidden}
+.preview-stage canvas{display:block;width:100%;height:100%;background:#fff;border:1px solid rgba(0,0,0,.16);box-shadow:0 8px 22px rgba(0,0,0,.08);image-rendering:pixelated}
+.preview-controls{display:grid;grid-template-columns:1fr;gap:12px;align-content:start;min-width:0}
+.tool-section{display:grid;gap:10px;padding:12px;border:1px solid var(--sb);border-radius:14px;background:rgba(255,255,255,.42);min-width:0;overflow:hidden}
+.tool-section.wide{grid-column:1/-1}
+.tool-title{font-size:12px;color:var(--t2);font-weight:900;letter-spacing:.08em}
+.ctrl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px 12px;min-width:0}
+.ctrl-line{display:grid;gap:6px;align-items:center;min-width:0}
+.ctrl-line.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ctrl-line.wide{grid-column:1/-1}
+.ctrl-line.color-unsupported{display:none}
+.ctrl-line label{display:flex;gap:8px;align-items:center;justify-content:space-between;min-width:0;font-size:12px;color:var(--t2);font-weight:800}
+.ctrl-line label span{color:var(--tx);font-weight:900;white-space:nowrap}
+.preview-controls select,.preview-controls input[type=range]{display:block;width:100%;max-width:100%;min-width:0}
+.preview-controls select{padding:8px 10px;background:var(--sf);border:1px solid var(--sb);color:var(--tx);border-radius:10px;font-size:12px;font-weight:700}
+.preview-controls input[type=range]{accent-color:var(--ac)}
+.seg{display:inline-flex;gap:4px;padding:3px;border:1px solid var(--sb);border-radius:10px;background:var(--sf)}
+.seg button{border:0;background:transparent;color:var(--tx);border-radius:7px;padding:6px 8px;font-size:12px;font-weight:800;cursor:pointer}
+.seg button.on{background:var(--cd);color:var(--ac);box-shadow:0 1px 6px var(--ag)}
+.check{display:inline-flex;gap:5px;align-items:center;font-size:12px;color:var(--tx);font-weight:700}
+.preview-meta{font-size:12px;color:var(--t2);line-height:1.55;background:var(--sf);border:1px solid var(--sb);border-radius:12px;padding:10px}
+.status-card .bd{padding-top:22px}
+.status-card .kv{grid-template-columns:92px 1fr;gap:10px 14px;align-items:start}
+.status-card .v{line-height:1.45;word-break:break-word}
+/* ── Onboarding ── */
+.onboard-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:flex;align-items:center;justify-content:center}
+.onboard-card{background:var(--cd);border-radius:18px;padding:22px 22px;max-width:420px;width:90%;box-shadow:0 16px 48px rgba(0,0,0,.2)}
+.onboard-card h2{margin:0 0 10px;font-size:17px;line-height:1.25}
+.onboard-card p{font-size:12px;line-height:1.6;color:var(--t2);margin:0 0 7px}
+.onboard-card .steps{list-style:none;padding:0;margin:12px 0}
+.onboard-card .steps li{padding:7px 0;font-size:12px;line-height:1.45;border-bottom:1px solid var(--sb)}
+.onboard-card .steps li span{font-weight:700;color:var(--ac);margin-right:6px}
+/* ── Theme Switcher ── */
+.tsw{display:flex;gap:5px;align-items:center}
+.tsw button{cursor:pointer;border:2px solid transparent;border-radius:999px;padding:4px 10px 4px 7px;
+  font-size:11px;font-weight:600;color:var(--t2);background:var(--cd);display:flex;align-items:center;gap:5px;transition:all .2s;white-space:nowrap;line-height:1}
+.tsw button:hover{border-color:var(--sb);transform:translateY(-1px)}
+.tsw button.on{border-color:var(--ac);color:var(--ac);box-shadow:0 2px 10px var(--ag);font-weight:800}
+.tsw button:focus{outline:none}
+.tsw button:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.td{width:16px;height:16px;border-radius:50%;display:block;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+@media(max-width:1180px){.wrap{max-width:940px}.dash{grid-template-columns:repeat(3,minmax(130px,1fr))}}
+@media(max-width:860px){.grid{grid-template-columns:1fr}.hdr{gap:10px}.status-card{position:relative;top:auto}}
+@media(max-width:1040px){.preview-wrap{grid-template-columns:1fr}.preview-pane{position:relative;top:auto;max-width:min(100%,var(--preview-pane-max))}}
+@media(max-width:640px){.upload-bar{grid-template-columns:1fr}.preview-controls{grid-template-columns:1fr}.ctrl-grid{grid-template-columns:1fr}.seg{width:100%}.seg button{flex:1;padding-left:6px;padding-right:6px}}
+@media(max-width:640px){.dash{grid-template-columns:repeat(2,minmax(120px,1fr))}.wrap{padding:16px 12px}}
+@media(max-width:480px){.tsw button{padding:4px 7px 4px 5px;font-size:10px}.td{width:13px;height:13px}}
+/* ── Mascot ── */
+.mascot{flex-shrink:0}
+.mascot svg{display:none;width:64px;height:64px;filter:drop-shadow(0 3px 8px rgba(0,0,0,.08));animation:m-bob 3s ease-in-out infinite}
+[data-theme="loopy"] .m-loopy,[data-theme="kitty"] .m-kitty,[data-theme="lotso"] .m-lotso{display:block}
+@keyframes m-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@media(max-width:480px){.mascot svg{width:48px;height:48px}}
+/* ── Side Decorations ── */
+.side-deco{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.wrap{position:relative;z-index:1}
+.sd-g{display:none;width:100%;height:100%}
+[data-theme="loopy"] .sd-g.sl{display:block}
+[data-theme="kitty"] .sd-g.sk{display:block}
+[data-theme="lotso"] .sd-g.so{display:block}
+.wm{position:absolute}
+.sd{position:absolute;animation:sdd 8s ease-in-out infinite}
+.sd:nth-child(even){animation-direction:alternate-reverse;animation-duration:11s}
+@keyframes sdd{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-12px) rotate(4deg)}}
+@media(max-width:1000px){.side-deco{display:none}}
+.epd-credit{margin-top:20px;padding-top:14px;border-top:1px solid var(--cb);font-size:12px;color:var(--t2);text-align:center;line-height:1.6}
+.epd-credit strong{color:var(--tx);font-weight:700}
+.epd-credit a{color:var(--ac);font-weight:600;text-decoration:none}
+.epd-credit a:hover{text-decoration:underline}
+/* Unified page navigation */
+.nav{width:min(1180px,calc(100vw - 32px));display:flex;align-items:center;gap:8px;margin:0 0 18px 50%;padding:8px;overflow-x:auto;flex-wrap:nowrap;border-radius:18px;background:rgba(255,255,255,.60);border:1px solid var(--cb);box-shadow:0 8px 22px rgba(255,155,179,.10);scrollbar-width:none;-webkit-overflow-scrolling:touch;transform:translateX(-50%)}
+.nav::-webkit-scrollbar{display:none}
+.nav a{flex:0 0 auto;min-height:38px;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:0 13px;border-radius:12px;font-size:13px;font-weight:800;line-height:1;color:var(--tx);background:rgba(255,255,255,.78);border:1px solid var(--cb);text-decoration:none;white-space:nowrap;box-shadow:0 4px 12px rgba(255,155,179,.08)}
+.nav .ni{width:18px;min-width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:15px;line-height:1}
+.nav a:hover,.nav a.active{color:var(--ac);border-color:var(--ac);background:var(--hv);transform:translateY(-1px);box-shadow:0 0 0 2px var(--ag)}
+@media(max-width:640px){.nav{width:calc(100vw - 24px);padding:7px;gap:7px;border-radius:16px}.nav a{min-height:36px;padding:0 11px;font-size:12px}}
+</style>
+<style id="unified-shell-v2">
+/* Unified app shell v2: keep page size, nav, cards and form rhythm consistent. */
+body{overflow-y:scroll}
+body .wrap{width:min(1180px,calc(100vw - 32px));max-width:1180px!important;margin:0 auto!important;padding:24px 0 36px!important}
+body.page-upload .wrap{width:min(1180px,calc(100vw - 32px));max-width:1180px!important}
+body.page-config .wrap,body.page-board .wrap{width:min(1380px,calc(100vw - 36px));max-width:1380px!important}
+body.page-config .page{width:min(1180px,calc(100vw - 32px))!important;max-width:1180px!important;margin:24px auto 36px!important}
+body.page-board{overflow:hidden}
+body .hdr{width:100%;min-height:46px;margin:0 0 16px!important;align-items:center}
+body .hdr .title{line-height:1.25}
+body .nav{width:min(1180px,100%)!important;max-width:100%!important;margin:0 auto 20px!important;transform:none!important;justify-content:center!important}
+body .nav a{flex:0 0 88px!important;width:88px!important;min-width:88px!important;max-width:88px!important;padding:0 6px!important;gap:5px!important;overflow:hidden!important}
+body .card{border-radius:16px!important}
+body.page-panel .card,body.page-task .card{width:100%;margin-left:auto!important;margin-right:auto!important}
+body.page-panel .wrap>.row,body.page-panel .wrap>.log,body.page-task .wrap>.row,body.page-task .wrap>.log{width:100%;margin-left:auto!important;margin-right:auto!important}
+body.page-panel .card .hd,body.page-task .card .hd{padding:20px 22px 12px!important}
+body.page-panel .card .bd,body.page-task .card .bd{padding:18px 22px 22px!important}
+body.page-panel .card .bd{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px;align-items:start}
+body.page-panel .card .bd>.kv,body.page-panel .card .bd>.row,body.page-panel .card .bd>.log{grid-column:1/-1}
+body.page-panel .card .bd>.form-row{margin-bottom:0!important}
+body.page-panel select,body.page-panel input[type=text],body.page-panel input[type=password],body.page-panel input[type=number],body.page-panel textarea{max-width:none!important}
+body.page-panel #cityResults{max-width:none!important}
+body.page-task .wrap>.row{margin-top:16px}
+body.page-upload .card,body.page-config .card{width:100%}
+body.page-gallery .card,body.page-timetable .card{width:100%;margin-left:auto!important;margin-right:auto!important}
+body.page-gallery .wrap>.row,body.page-gallery .wrap>.log,body.page-timetable .wrap>.row,body.page-timetable .wrap>.log{width:100%;margin-left:auto!important;margin-right:auto!important}
+body .epd-credit{width:100%;max-width:100%!important;margin-left:auto!important;margin-right:auto!important}
+@media(max-width:760px){body .wrap,body.page-upload .wrap{width:calc(100vw - 24px);padding:16px 0 28px!important}body.page-config .page{width:calc(100vw - 24px)!important;margin-top:16px!important}body.page-panel .card .bd{grid-template-columns:1fr}body .nav{margin-bottom:16px!important;justify-content:flex-start!important}}
+</style>
+</head>
+<body class="page-shell page-upload page-wide">
+<div class="side-deco">
+  <div class="sd-g sl">
+    <svg class="wm" style="left:1%;top:5%;width:200px;height:200px;opacity:.055" viewBox="0 0 100 100"><circle cx="22" cy="28" r="11" fill="#FFB5C8"/><circle cx="78" cy="28" r="11" fill="#FFB5C8"/><circle cx="50" cy="55" r="36" fill="#FFB5C8"/><ellipse cx="50" cy="62" rx="20" ry="14" fill="#FFD6E0"/><circle cx="28" cy="58" r="6" fill="#FF8FA8" opacity=".5"/><circle cx="72" cy="58" r="6" fill="#FF8FA8" opacity=".5"/></svg>
+    <svg class="wm" style="right:1%;bottom:8%;width:180px;height:180px;opacity:.045;transform:scaleX(-1)" viewBox="0 0 100 100"><circle cx="22" cy="28" r="11" fill="#FFB5C8"/><circle cx="78" cy="28" r="11" fill="#FFB5C8"/><circle cx="50" cy="55" r="36" fill="#FFB5C8"/><ellipse cx="50" cy="62" rx="20" ry="14" fill="#FFD6E0"/><circle cx="28" cy="58" r="6" fill="#FF8FA8" opacity=".5"/><circle cx="72" cy="58" r="6" fill="#FF8FA8" opacity=".5"/></svg>
+    <span class="sd" style="left:2%;top:15%;font-size:32px;opacity:.2">🌸</span>
+    <span class="sd" style="left:7%;top:35%;font-size:22px;opacity:.14;animation-delay:-2s">💗</span>
+    <span class="sd" style="left:3%;top:55%;font-size:28px;opacity:.18;animation-delay:-4s">✨</span>
+    <span class="sd" style="left:6%;top:75%;font-size:20px;opacity:.14;animation-delay:-6s">🌷</span>
+    <span class="sd" style="left:1%;top:90%;font-size:24px;opacity:.16;animation-delay:-1s">💗</span>
+    <span class="sd" style="right:3%;top:12%;font-size:26px;opacity:.18;animation-delay:-.5s">💗</span>
+    <span class="sd" style="right:6%;top:32%;font-size:32px;opacity:.2;animation-delay:-2.5s">🌸</span>
+    <span class="sd" style="right:2%;top:52%;font-size:20px;opacity:.14;animation-delay:-4.5s">✨</span>
+    <span class="sd" style="right:5%;top:72%;font-size:28px;opacity:.18;animation-delay:-6.5s">🌸</span>
+    <span class="sd" style="right:1%;top:88%;font-size:22px;opacity:.14;animation-delay:-1.5s">🌷</span>
+  </div>
+  <div class="sd-g sk">
+    <svg class="wm" style="left:1%;top:5%;width:200px;height:200px;opacity:.055" viewBox="0 0 100 100"><path d="M28,38 L18,6 L44,30Z" fill="#FFD0D8"/><path d="M72,38 L82,6 L56,30Z" fill="#FFD0D8"/><ellipse cx="50" cy="55" rx="36" ry="33" fill="#FFD0D8"/><circle cx="18" cy="16" r="9" fill="#FF4D6D" opacity=".6"/><circle cx="12" cy="11" r="6.5" fill="#FF6B88" opacity=".6"/><circle cx="24" cy="11" r="6.5" fill="#FF6B88" opacity=".6"/></svg>
+    <svg class="wm" style="right:1%;bottom:8%;width:180px;height:180px;opacity:.045;transform:scaleX(-1)" viewBox="0 0 100 100"><path d="M28,38 L18,6 L44,30Z" fill="#FFD0D8"/><path d="M72,38 L82,6 L56,30Z" fill="#FFD0D8"/><ellipse cx="50" cy="55" rx="36" ry="33" fill="#FFD0D8"/><circle cx="18" cy="16" r="9" fill="#FF4D6D" opacity=".6"/><circle cx="12" cy="11" r="6.5" fill="#FF6B88" opacity=".6"/><circle cx="24" cy="11" r="6.5" fill="#FF6B88" opacity=".6"/></svg>
+    <span class="sd" style="left:2%;top:15%;font-size:32px;opacity:.2">🎀</span>
+    <span class="sd" style="left:7%;top:35%;font-size:22px;opacity:.14;animation-delay:-2s">❤️</span>
+    <span class="sd" style="left:3%;top:55%;font-size:28px;opacity:.18;animation-delay:-4s">⭐</span>
+    <span class="sd" style="left:6%;top:75%;font-size:20px;opacity:.14;animation-delay:-6s">🎀</span>
+    <span class="sd" style="left:1%;top:90%;font-size:24px;opacity:.16;animation-delay:-1s">💛</span>
+    <span class="sd" style="right:3%;top:12%;font-size:26px;opacity:.18;animation-delay:-.5s">🎀</span>
+    <span class="sd" style="right:6%;top:32%;font-size:32px;opacity:.2;animation-delay:-2.5s">❤️</span>
+    <span class="sd" style="right:2%;top:52%;font-size:20px;opacity:.14;animation-delay:-4.5s">⭐</span>
+    <span class="sd" style="right:5%;top:72%;font-size:28px;opacity:.18;animation-delay:-6.5s">🎀</span>
+    <span class="sd" style="right:1%;top:88%;font-size:22px;opacity:.14;animation-delay:-1.5s">💛</span>
+  </div>
+  <div class="sd-g so">
+    <svg class="wm" style="left:1%;top:5%;width:200px;height:200px;opacity:.055" viewBox="0 0 100 100"><circle cx="22" cy="24" r="13" fill="#D06888"/><circle cx="22" cy="24" r="7" fill="#E8A8C0"/><circle cx="78" cy="24" r="13" fill="#D06888"/><circle cx="78" cy="24" r="7" fill="#E8A8C0"/><circle cx="50" cy="55" r="36" fill="#D06888"/><ellipse cx="50" cy="63" rx="18" ry="12" fill="#F0C8D8"/></svg>
+    <svg class="wm" style="right:1%;bottom:8%;width:180px;height:180px;opacity:.045;transform:scaleX(-1)" viewBox="0 0 100 100"><circle cx="22" cy="24" r="13" fill="#D06888"/><circle cx="22" cy="24" r="7" fill="#E8A8C0"/><circle cx="78" cy="24" r="13" fill="#D06888"/><circle cx="78" cy="24" r="7" fill="#E8A8C0"/><circle cx="50" cy="55" r="36" fill="#D06888"/><ellipse cx="50" cy="63" rx="18" ry="12" fill="#F0C8D8"/></svg>
+    <span class="sd" style="left:2%;top:15%;font-size:32px;opacity:.2">🍓</span>
+    <span class="sd" style="left:7%;top:35%;font-size:22px;opacity:.14;animation-delay:-2s">💗</span>
+    <span class="sd" style="left:3%;top:55%;font-size:28px;opacity:.18;animation-delay:-4s">🍓</span>
+    <span class="sd" style="left:6%;top:75%;font-size:20px;opacity:.14;animation-delay:-6s">🌺</span>
+    <span class="sd" style="left:1%;top:90%;font-size:24px;opacity:.16;animation-delay:-1s">💗</span>
+    <span class="sd" style="right:3%;top:12%;font-size:26px;opacity:.18;animation-delay:-.5s">🍓</span>
+    <span class="sd" style="right:6%;top:32%;font-size:32px;opacity:.2;animation-delay:-2.5s">💗</span>
+    <span class="sd" style="right:2%;top:52%;font-size:20px;opacity:.14;animation-delay:-4.5s">🍓</span>
+    <span class="sd" style="right:5%;top:72%;font-size:28px;opacity:.18;animation-delay:-6.5s">🌺</span>
+    <span class="sd" style="right:1%;top:88%;font-size:22px;opacity:.14;animation-delay:-1.5s">🍓</span>
+  </div>
+</div>
+<div class="wrap">
+  <div class="hdr">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="mascot">
+        <svg class="m-loopy" viewBox="0 0 100 100"><circle cx="22" cy="25" r="12" fill="#FFB5C8" stroke="#E88AA6" stroke-width="2"/><circle cx="78" cy="25" r="12" fill="#FFB5C8" stroke="#E88AA6" stroke-width="2"/><circle cx="50" cy="55" r="38" fill="#FFB5C8" stroke="#E88AA6" stroke-width="2"/><ellipse cx="50" cy="62" rx="22" ry="16" fill="#FFDCE6"/><ellipse cx="37" cy="48" rx="7" ry="8" fill="#fff" stroke="#555" stroke-width="1.5"/><ellipse cx="63" cy="48" rx="7" ry="8" fill="#fff" stroke="#555" stroke-width="1.5"/><circle cx="39" cy="47" r="4" fill="#333"/><circle cx="65" cy="47" r="4" fill="#333"/><circle cx="40.5" cy="45" r="1.5" fill="#fff"/><circle cx="66.5" cy="45" r="1.5" fill="#fff"/><circle cx="26" cy="60" r="7" fill="#FF8FA8" opacity=".45"/><circle cx="74" cy="60" r="7" fill="#FF8FA8" opacity=".45"/><ellipse cx="50" cy="58" rx="3" ry="2" fill="#E88AA6"/><path d="M43,66 Q50,73 57,66" fill="none" stroke="#D07090" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg class="m-kitty" viewBox="0 0 100 100"><path d="M25,35 L15,5 L45,28Z" fill="#fff" stroke="#555" stroke-width="2" stroke-linejoin="round"/><path d="M75,35 L85,5 L55,28Z" fill="#fff" stroke="#555" stroke-width="2" stroke-linejoin="round"/><ellipse cx="50" cy="55" rx="38" ry="35" fill="#fff" stroke="#555" stroke-width="2"/><circle cx="18" cy="15" r="9" fill="#FF4D6D"/><circle cx="10" cy="10" r="7" fill="#FF6B88"/><circle cx="26" cy="10" r="7" fill="#FF6B88"/><circle cx="18" cy="12" r="2.5" fill="#FFD700"/><ellipse cx="38" cy="52" rx="3" ry="3.5" fill="#333"/><ellipse cx="62" cy="52" rx="3" ry="3.5" fill="#333"/><ellipse cx="50" cy="60" rx="3" ry="2" fill="#FFD700"/><line x1="5" y1="52" x2="28" y2="56" stroke="#555" stroke-width="1.2"/><line x1="5" y1="59" x2="28" y2="60" stroke="#555" stroke-width="1.2"/><line x1="5" y1="66" x2="28" y2="64" stroke="#555" stroke-width="1.2"/><line x1="95" y1="52" x2="72" y2="56" stroke="#555" stroke-width="1.2"/><line x1="95" y1="59" x2="72" y2="60" stroke="#555" stroke-width="1.2"/><line x1="95" y1="66" x2="72" y2="64" stroke="#555" stroke-width="1.2"/></svg>
+        <svg class="m-lotso" viewBox="0 0 100 100"><circle cx="20" cy="22" r="14" fill="#D06888" stroke="#B74678" stroke-width="2"/><circle cx="20" cy="22" r="8" fill="#E8A8C0"/><circle cx="80" cy="22" r="14" fill="#D06888" stroke="#B74678" stroke-width="2"/><circle cx="80" cy="22" r="8" fill="#E8A8C0"/><circle cx="50" cy="55" r="38" fill="#D06888" stroke="#B74678" stroke-width="2"/><ellipse cx="50" cy="64" rx="20" ry="14" fill="#F0C8D8"/><ellipse cx="36" cy="48" rx="6" ry="7" fill="#fff" stroke="#555" stroke-width="1.5"/><ellipse cx="64" cy="48" rx="6" ry="7" fill="#fff" stroke="#555" stroke-width="1.5"/><circle cx="37.5" cy="47" r="3.5" fill="#333"/><circle cx="65.5" cy="47" r="3.5" fill="#333"/><circle cx="39" cy="45" r="1.2" fill="#fff"/><circle cx="67" cy="45" r="1.2" fill="#fff"/><path d="M29,40 Q34,36 42,39" fill="none" stroke="#8A3050" stroke-width="2" stroke-linecap="round"/><path d="M58,39 Q66,36 71,40" fill="none" stroke="#8A3050" stroke-width="2" stroke-linecap="round"/><ellipse cx="50" cy="60" rx="5" ry="3.5" fill="#9B3F6B"/><path d="M40,69 Q50,77 60,69" fill="none" stroke="#8A3050" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div class="title">墨水屏上传面板</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <div class="tsw" id="themeSw">
+        <button type="button" data-t="loopy" aria-pressed="false" onclick="setTheme('loopy')"><span class="td" style="background:linear-gradient(135deg,#FF9BB3,#8CC8F0)"></span>Loopy</button>
+        <button type="button" data-t="kitty" aria-pressed="false" onclick="setTheme('kitty')"><span class="td" style="background:linear-gradient(135deg,#FF4D6D,#FFB347)"></span>Kitty</button>
+        <button type="button" data-t="lotso" aria-pressed="false" onclick="setTheme('lotso')"><span class="td" style="background:linear-gradient(135deg,#B74678,#E8A0B8)"></span>草莓熊</button>
+      </div>
+      <div class="pill" id="netPill">ESP32-S3</div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="nav">
+    <a href="/" class="active"><span class="ni">🖼</span> 上传</a>
+    <a href="/gallery"><span class="ni">🔁</span> 轮播</a>
+    <a href="/weather"><span class="ni">🌤</span> 天气</a>
+    <a href="/clock"><span class="ni">🕐</span> 时钟</a>
+    <a href="/calendar"><span class="ni">🗓</span> 日历</a>
+    <a href="/timetable"><span class="ni">📅</span> 课程表</a>
+    <a href="/todo"><span class="ni">✅</span> 待办</a>
+    <a href="/countdown"><span class="ni">⏳</span> 倒计时</a>
+    <a href="/message"><span class="ni">💬</span> 文字留言</a>
+    <a href="/board"><span class="ni">🎨</span> 画布留言</a>
+    <a href="/codex"><span class="ni">📊</span> 额度</a>
+    <a href="/config"><span class="ni">⚙</span> 设备配置</a>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="dash" id="dash">
+    <div class="dash-item"><div class="dash-icon">📡</div><div class="dash-label">网络</div><div class="dash-value" id="d_net">-</div></div>
+    <div class="dash-item"><div class="dash-icon">🖥</div><div class="dash-label">当前模式</div><div class="dash-value" id="d_mode">-</div></div>
+    <div class="dash-item"><div class="dash-icon">🕐</div><div class="dash-label">设备时间</div><div class="dash-value" id="d_time">-</div></div>
+    <div class="dash-item"><div class="dash-icon">📺</div><div class="dash-label">屏幕</div><div class="dash-value" id="d_panel">-</div></div>
+    <div class="dash-item"><div class="dash-icon">💾</div><div class="dash-label">存储</div><div class="dash-value" id="d_storage">-</div></div>
+    <div class="dash-item"><div class="dash-icon">🔋</div><div class="dash-label">电量</div><div class="dash-value" id="d_power">-</div></div>
+    <div class="dash-item"><div class="dash-icon">🌤</div><div class="dash-label">天气</div><div class="dash-value" id="d_weather">-</div></div>
+    <div class="dash-item"><div class="dash-icon">🏷</div><div class="dash-label">固件</div><div class="dash-value" id="d_fw">-</div></div>
+    <div class="dash-item"><div class="dash-icon">🧠</div><div class="dash-label">内存</div><div class="dash-value" id="d_heap">-</div></div>
+  </div>
+
+  <div class="grid">
+    <div class="stack-col">
+    <!-- Upload -->
+    <div class="card upload-card">
+      <div class="hd">
+        <div class="title" style="font-size:16px">上传图片</div>
+        <div class="sub">支持 JPEG / PNG / BMP，浏览器自动压缩后上传，设备缩放居中、抖动处理后刷新墨水屏。</div>
+      </div>
+      <div class="bd">
+        <div class="upload-bar">
+          <input type="file" id="f" accept="image/jpeg,image/png,image/bmp">
+          <button class="btn" id="up" onclick="upload()">上传并显示</button>
+        </div>
+        <div class="preview-wrap" id="previewWrap" style="display:none">
+          <div class="preview-pane">
+            <div class="preview-stage">
+              <canvas id="epdPreview" width="128" height="296"></canvas>
+            </div>
+            <div class="preview-meta" id="previewMeta">选择图片后显示预览。</div>
+          </div>
+          <div class="preview-controls">
+            <div class="tool-section wide">
+              <div class="tool-title">基础</div>
+              <div class="ctrl-grid">
+                <div class="ctrl-line inline wide">
+                  <label>预设</label>
+                  <span class="seg" id="presetSeg">
+                    <button type="button" data-preset="photo" class="on">照片</button>
+                    <button type="button" data-preset="anime">动漫</button>
+                    <button type="button" data-preset="text">纯黑白</button>
+                    <button type="button" data-preset="soft">柔和</button>
+                  </span>
+                </div>
+                <div class="ctrl-line">
+                  <label>适配</label>
+                  <select id="fitMode">
+                    <option value="contain">完整显示</option>
+                    <option value="cover" selected>铺满裁剪</option>
+                    <option value="stretch">拉伸铺满</option>
+                  </select>
+                </div>
+                <div class="ctrl-line inline">
+                  <label class="check"><input type="checkbox" id="invertImg"> 反色</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="tool-section wide">
+              <div class="tool-title">画面</div>
+              <div class="ctrl-grid">
+                <div class="ctrl-line inline wide">
+                  <label>方向</label>
+                  <span class="seg" id="rotSeg">
+                    <button type="button" data-rot="0" class="on">0°</button>
+                    <button type="button" data-rot="90">90°</button>
+                    <button type="button" data-rot="180">180°</button>
+                    <button type="button" data-rot="270">270°</button>
+                  </span>
+                </div>
+                <div class="ctrl-line inline wide">
+                  <label class="check"><input type="checkbox" id="flipX"> 水平镜像</label>
+                  <label class="check"><input type="checkbox" id="flipY"> 垂直镜像</label>
+                </div>
+                <div class="ctrl-line">
+                  <label>亮度 <span id="brightnessVal">0</span></label>
+                  <input type="range" id="brightness" min="-80" max="80" value="0">
+                </div>
+                <div class="ctrl-line">
+                  <label>对比度 <span id="contrastVal">1.20×</span></label>
+                  <input type="range" id="contrast" min="40" max="260" value="120">
+                </div>
+                <div class="ctrl-line">
+                  <label>伽马 <span id="gammaVal">1.00</span></label>
+                  <input type="range" id="gamma" min="55" max="180" value="100">
+                </div>
+                <div class="ctrl-line">
+                  <label>锐化 <span id="sharpVal">0.20</span></label>
+                  <input type="range" id="sharp" min="0" max="100" value="20">
+                </div>
+              </div>
+            </div>
+
+            <div class="tool-section">
+              <div class="tool-title">颜色</div>
+              <div class="ctrl-grid">
+                <div class="ctrl-line" id="redCtrl">
+                  <label>红色模式</label>
+                  <select id="redMode">
+                    <option value="normal" selected>标准</option>
+                    <option value="safe">保守</option>
+                    <option value="strong">激进</option>
+                    <option value="off">关闭红色</option>
+                  </select>
+                </div>
+                <div class="ctrl-line" id="redSensCtrl">
+                  <label>红色敏感度 <span id="redVal">0.35</span></label>
+                  <input type="range" id="redSens" min="0" max="100" value="35">
+                </div>
+                <div class="ctrl-line" id="yellowSensCtrl">
+                  <label>黄色敏感度 <span id="yellowVal">0.35</span></label>
+                  <input type="range" id="yellowSens" min="0" max="100" value="35">
+                </div>
+              </div>
+            </div>
+
+            <div class="tool-section">
+              <div class="tool-title">输出</div>
+              <div class="ctrl-grid">
+                <div class="ctrl-line">
+                  <label>阈值 <span id="thrVal">96</span></label>
+                  <input type="range" id="thr" min="40" max="210" value="96">
+                </div>
+                <div class="ctrl-line">
+                  <label>抖动强度 <span id="ditherVal">1.00×</span></label>
+                  <input type="range" id="dither" min="0" max="160" value="100">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="log" id="log">已就绪。</div>
+      </div>
+    </div>
+
+    <!-- Gallery -->
+    <div class="card fullcard">
+      <div class="hd">
+        <div class="title" style="font-size:16px">画廊</div>
+        <div class="sub">已存储的图片，点击「显示」推送到墨水屏。</div>
+      </div>
+      <div class="bd">
+        <div id="gallery" class="gallery"><div class="empty">加载中…</div></div>
+      </div>
+    </div>
+    </div>
+
+    <!-- Status -->
+    <div class="card status-card">
+      <div class="hd">
+        <div class="title" style="font-size:16px">设备状态</div>
+        <div class="sub">文件与存储空间</div>
+      </div>
+      <div class="bd">
+        <div class="kv">
+          <div class="k">upload.jpg</div><div class="v" id="u_sz">-</div>
+          <div class="k">image.bin</div><div class="v" id="r_sz">-</div>
+          <div class="k">用户文件区</div><div class="v" id="sp_txt">-</div>
+          <div class="k">屏幕</div><div class="v" id="panel_txt">-</div>
+          <div class="k">固件</div><div class="v" id="fw_txt">-</div>
+          <div class="k">天气</div><div class="v" id="wx_txt">-</div>
+          <div class="k">设备时间</div><div class="v" id="dev_time">-</div>
+        </div>
+        <div class="bar-wrap" title="用户文件区已用比例"><div class="bar-fill" id="sp_bar" style="width:0;background:var(--ok)"></div></div>
+        <div class="sub" id="sp_hint" style="margin-top:6px">进度条表示已用比例。</div>
+        <div style="height:12px"></div>
+        <div class="row">
+          <button class="btn ghost sm" onclick="refresh()">刷新状态</button>
+          <button class="btn ghost sm" onclick="delFiles()">删除文件并清屏</button>
+        </div>
+        <div class="sub" style="margin-top:10px">墨水屏断电保留画面，删除文件时会同时清屏。</div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="epd-credit" role="contentinfo">由 <strong>喵喵</strong> 设计并开发 · 智能墨水屏终端 · <a href="https://gitee.com/gxp666111/miaomiao" target="_blank" rel="noopener noreferrer">源码仓库</a></footer>
+</div>
+
+<script>
+function setTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  localStorage.setItem('epd_theme',t);
+  document.querySelectorAll('.tsw button').forEach(function(b){
+    b.classList.remove('on');
+    b.removeAttribute('aria-pressed');
+    b.blur();
+  });
+  document.querySelectorAll('.tsw button[data-t="'+t+'"]').forEach(function(b){
+    b.classList.add('on');
+    b.setAttribute('aria-pressed','true');
+  });
+}
+(function(){var t=localStorage.getItem('epd_theme')||'loopy';setTheme(t)})();
+
+function epdAuthHeaders(){
+  try{
+    var u=localStorage.getItem('epd_auth_u');
+    var p=localStorage.getItem('epd_auth_p');
+    if(u!=null&&p!=null&&u!==''&&p!=='')
+      return {'Authorization':'Basic '+btoa(unescape(encodeURIComponent(u+':'+p)))};
+  }catch(e){}
+  return {};
+}
+function epdFetchOpts(extra){
+  extra=extra||{};
+  var h=Object.assign({},epdAuthHeaders(),extra.headers||{});
+  return Object.assign({},extra,{headers:h});
+}
+
+function fmt(n){if(n==null||n<0) return '-'; if(n<1024) return n+' B'; if(n<1024*1024) return (n/1024).toFixed(1)+' KB'; return (n/1024/1024).toFixed(2)+' MB';}
+function fmtStorage(n){n=Number(n)||0; if(n>=1024*1024) return (n/1024/1024).toFixed(n>=10*1024*1024?1:2).replace(/\.0$/,'')+' MB'; if(n>=1024) return (n/1024).toFixed(n>=10*1024?1:2).replace(/\.0$/,'')+' KB'; return n+' B';}
+function fmtVolt(mv){return mv>0?(mv/1000).toFixed(2)+'V':'--';}
+function compactPanel(s){return s&&s.panel_width?s.panel_width+'×'+s.panel_height:'-';}
+let epdPanelW=128, epdPanelH=296, epdPanelHasRed=true, epdPanelHasYellow=false;
+let previewImg=null, previewUrl=null;
+let previewRot=0;
+let previewPreset='photo';
+function weatherLabel(s){
+  if(!s.weather_configured) return '未配置';
+  if(!s.weather_enabled) return '已暂停';
+  if(s.weather_valid) return s.weather_temp+'° '+(s.weather_text||'天气');
+  return '待更新';
+}
+function log(s,cls){const el=document.getElementById('log'); el.className='log'+(cls?' '+cls:''); el.textContent=s;}
+
+async function refresh(){
+  try{
+    const r=await fetch('/status',epdFetchOpts()); const j=await r.json();
+    document.getElementById('u_sz').textContent=j.upload_bytes>=0?fmt(j.upload_bytes):'未找到';
+    document.getElementById('r_sz').textContent=j.raw_bytes>=0?fmt(j.raw_bytes):'未找到';
+    if(j.spiffs_ok===false){
+      document.getElementById('sp_txt').textContent='文件系统异常';
+      document.getElementById('sp_hint').textContent='请到设备配置页尝试重试或格式化文件区。';
+      const bar=document.getElementById('sp_bar');
+      bar.style.width='100%';
+      bar.style.background='var(--er)';
+    }else if(j.spiffs_total>0){
+      const used=Number(j.spiffs_used)||0;
+      const total=Number(j.spiffs_total)||0;
+      const free=Math.max(total-used,0);
+      const pct=total>0?(used/total*100):0;
+      document.getElementById('sp_txt').textContent='已用 '+fmtStorage(used)+'（'+pct.toFixed(1)+'%），剩余 '+fmtStorage(free)+' / 总 '+fmtStorage(total);
+      document.getElementById('sp_hint').textContent='进度条表示用户文件区已用比例，不是剩余空间。';
+      const bar=document.getElementById('sp_bar');
+      bar.style.width=Math.max(pct,3)+'%';
+      bar.style.background=pct<70?'var(--ok)':pct<90?'var(--wn)':'var(--er)';
+    }
+    document.getElementById('panel_txt').textContent=(j.panel_name||'-')+' · '+compactPanel(j)+(j.panel_has_yellow?' · 四色':(j.panel_has_red?' · 三色':' · 黑白'));
+    document.getElementById('fw_txt').textContent='v'+(j.version||'-')+' · '+(j.running||'-');
+    document.getElementById('wx_txt').textContent=weatherLabel(j)+(j.weather_city?' · '+j.weather_city:'');
+    document.getElementById('dev_time').textContent=j.time_synced?j.time:'未同步';
+    if(j.panel_width&&j.panel_height){
+      epdPanelW=j.panel_width; epdPanelH=j.panel_height;
+      epdPanelHasRed=!!j.panel_has_red;
+      epdPanelHasYellow=!!j.panel_has_yellow;
+      updateColorControls();
+      renderPreview();
+    }
+    updateDashboard(j);
+    updateNetFromStatus(j);
+    log('状态已更新。','ok');
+  }catch(e){log('状态获取失败：'+e,'bad');}
+}
+
+async function delFiles(){
+  try{const r=await fetch('/delete',epdFetchOpts({method:'POST'})); const t=await r.text();
+    await refresh(); await loadGallery(); log('删除结果：'+t,'ok');
+  }catch(e){log('删除失败：'+e,'bad');}
+}
+
+function previewOpts(){
+  return {
+    preset: previewPreset,
+    rot: previewRot,
+    flipX: !!document.getElementById('flipX')?.checked,
+    flipY: !!document.getElementById('flipY')?.checked,
+    fit: document.getElementById('fitMode')?.value || 'cover',
+    threshold: +(document.getElementById('thr')?.value || 96),
+    brightness: +(document.getElementById('brightness')?.value || 0),
+    contrast: (+(document.getElementById('contrast')?.value || 120)) / 100,
+    gamma: (+(document.getElementById('gamma')?.value || 100)) / 100,
+    sharpness: (+(document.getElementById('sharp')?.value || 20)) / 100,
+    redMode: document.getElementById('redMode')?.value || 'normal',
+    redSensitivity: (+(document.getElementById('redSens')?.value || 35)) / 100,
+    yellowSensitivity: (+(document.getElementById('yellowSens')?.value || 35)) / 100,
+    dither: (+(document.getElementById('dither')?.value || 100)) / 100,
+    invert: !!document.getElementById('invertImg')?.checked
+  };
+}
+
+const PRESET_VALUES={
+  photo:{threshold:108,brightness:4,contrast:130,gamma:92,sharp:12,red:32,yellow:32,dither:70,redMode:'normal',fit:'cover'},
+  anime:{threshold:116,brightness:0,contrast:170,gamma:90,sharp:32,red:42,yellow:38,dither:20,redMode:'strong',fit:'cover'},
+  text:{threshold:128,brightness:0,contrast:190,gamma:100,sharp:0,red:0,yellow:0,dither:0,redMode:'off',fit:'contain'},
+  soft:{threshold:104,brightness:8,contrast:110,gamma:108,sharp:0,red:20,yellow:20,dither:90,redMode:'safe',fit:'contain'}
+};
+
+function applyPreset(name, save){
+  const p=PRESET_VALUES[name]||PRESET_VALUES.photo;
+  previewPreset=name;
+  document.querySelectorAll('#presetSeg button').forEach(b=>b.classList.toggle('on',b.dataset.preset===name));
+  if(document.getElementById('thr')) document.getElementById('thr').value=p.threshold;
+  if(document.getElementById('brightness')) document.getElementById('brightness').value=p.brightness;
+  if(document.getElementById('contrast')) document.getElementById('contrast').value=p.contrast;
+  if(document.getElementById('gamma')) document.getElementById('gamma').value=p.gamma;
+  if(document.getElementById('sharp')) document.getElementById('sharp').value=p.sharp;
+  if(document.getElementById('redSens')) document.getElementById('redSens').value=p.red;
+  if(document.getElementById('yellowSens')) document.getElementById('yellowSens').value=p.yellow;
+  if(document.getElementById('dither')) document.getElementById('dither').value=p.dither;
+  if(document.getElementById('redMode')) document.getElementById('redMode').value=p.redMode;
+  if(document.getElementById('fitMode')) document.getElementById('fitMode').value=p.fit;
+  if(save) saveUploadPreviewOptions();
+}
+
+function markPresetCustom(){
+  previewPreset='custom';
+  document.querySelectorAll('#presetSeg button').forEach(b=>b.classList.remove('on'));
+}
+
+function saveUploadPreviewOptions(){
+  try{
+    localStorage.setItem('upload_img_opts',JSON.stringify({
+      preset:previewPreset,
+      threshold:document.getElementById('thr')?.value || '96',
+      brightness:document.getElementById('brightness')?.value || '0',
+      contrast:document.getElementById('contrast')?.value || '120',
+      gamma:document.getElementById('gamma')?.value || '100',
+      sharp:document.getElementById('sharp')?.value || '20',
+      redMode:document.getElementById('redMode')?.value || 'normal',
+      red:document.getElementById('redSens')?.value || '35',
+      yellow:document.getElementById('yellowSens')?.value || '35',
+      dither:document.getElementById('dither')?.value || '100',
+      fit:document.getElementById('fitMode')?.value || 'cover',
+      invert:!!document.getElementById('invertImg')?.checked,
+      flipX:!!document.getElementById('flipX')?.checked,
+      flipY:!!document.getElementById('flipY')?.checked,
+      rot:previewRot
+    }));
+  }catch(e){}
+}
+
+function loadUploadPreviewOptions(){
+  try{
+    const opt=JSON.parse(localStorage.getItem('upload_img_opts')||'{}');
+    if(opt.preset!=null) previewPreset=opt.preset;
+    if(opt.threshold!=null) document.getElementById('thr').value=opt.threshold;
+    if(opt.brightness!=null) document.getElementById('brightness').value=opt.brightness;
+    if(opt.contrast!=null) document.getElementById('contrast').value=opt.contrast;
+    if(opt.gamma!=null) document.getElementById('gamma').value=opt.gamma;
+    if(opt.sharp!=null) document.getElementById('sharp').value=opt.sharp;
+    if(opt.redMode!=null) document.getElementById('redMode').value=opt.redMode;
+    if(opt.red!=null) document.getElementById('redSens').value=opt.red;
+    if(opt.yellow!=null) document.getElementById('yellowSens').value=opt.yellow;
+    if(opt.dither!=null) document.getElementById('dither').value=opt.dither;
+    if(opt.fit!=null) document.getElementById('fitMode').value=opt.fit;
+    if(opt.invert!=null) document.getElementById('invertImg').checked=!!opt.invert;
+    if(opt.flipX!=null) document.getElementById('flipX').checked=!!opt.flipX;
+    if(opt.flipY!=null) document.getElementById('flipY').checked=!!opt.flipY;
+    if(opt.rot!=null){
+      previewRot=+opt.rot||0;
+      document.querySelectorAll('#rotSeg button').forEach(b=>b.classList.toggle('on',+(b.dataset.rot||0)===previewRot));
+    }
+    document.querySelectorAll('#presetSeg button').forEach(b=>b.classList.toggle('on',b.dataset.preset===previewPreset));
+  }catch(e){}
+}
+
+function updatePreviewControlLabels(opt){
+  document.getElementById('thrVal').textContent=opt.threshold;
+  document.getElementById('brightnessVal').textContent=opt.brightness;
+  document.getElementById('contrastVal').textContent=opt.contrast.toFixed(2)+'×';
+  document.getElementById('gammaVal').textContent=opt.gamma.toFixed(2);
+  document.getElementById('sharpVal').textContent=opt.sharpness.toFixed(2);
+  document.getElementById('redVal').textContent=opt.redSensitivity.toFixed(2);
+  document.getElementById('yellowVal').textContent=opt.yellowSensitivity.toFixed(2);
+  document.getElementById('ditherVal').textContent=opt.dither.toFixed(2)+'×';
+}
+
+function updateColorControls(){
+  const redOff=!epdPanelHasRed;
+  const yellowOff=!epdPanelHasYellow;
+  ['redCtrl','redSensCtrl'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.classList.toggle('color-unsupported',redOff);
+  });
+  const yel=document.getElementById('yellowSensCtrl');
+  if(yel) yel.classList.toggle('color-unsupported',yellowOff);
+}
+
+function updatePreviewStageSize(){
+  const w=Math.max(1,epdPanelW||128);
+  const h=Math.max(1,epdPanelH||296);
+  const wrap=document.getElementById('previewWrap');
+  if(!wrap) return;
+  const isWide=w>=h;
+  const maxWide=Math.min(560,Math.max(360,w));
+  const maxTall=Math.min(420,Math.max(220,w*1.8));
+  wrap.style.setProperty('--preview-aspect',w+' / '+h);
+  wrap.style.setProperty('--preview-pane-max',(isWide?maxWide:maxTall)+'px');
+}
+
+function transformedSize(img,opt){
+  return (opt.rot%180===0) ? {w:img.width,h:img.height} : {w:img.height,h:img.width};
+}
+
+function drawTransformedImage(ctx,img,opt,dw,dh){
+  const ts=transformedSize(img,opt);
+  const stage=document.createElement('canvas');
+  stage.width=ts.w; stage.height=ts.h;
+  const sctx=stage.getContext('2d');
+  sctx.save();
+  sctx.translate(ts.w/2,ts.h/2);
+  sctx.scale(opt.flipX?-1:1,opt.flipY?-1:1);
+  sctx.rotate(opt.rot*Math.PI/180);
+  sctx.drawImage(img,-img.width/2,-img.height/2);
+  sctx.restore();
+  let sx=0,sy=0,sw=ts.w,sh=ts.h,dx=0,dy=0,tw=dw,th=dh;
+  if(opt.fit==='contain'){
+    const sc=Math.min(dw/ts.w,dh/ts.h);
+    tw=Math.max(1,Math.round(ts.w*sc)); th=Math.max(1,Math.round(ts.h*sc));
+    dx=Math.floor((dw-tw)/2); dy=Math.floor((dh-th)/2);
+  }else if(opt.fit==='cover'){
+    const sc=Math.max(dw/ts.w,dh/ts.h);
+    sw=Math.max(1,Math.min(ts.w,dw/sc));
+    sh=Math.max(1,Math.min(ts.h,dh/sc));
+    sx=(ts.w-sw)/2; sy=(ts.h-sh)/2;
+  }
+  ctx.save();
+  ctx.fillStyle='#fff';
+  ctx.fillRect(0,0,dw,dh);
+  ctx.drawImage(stage,sx,sy,sw,sh,dx,dy,tw,th);
+  ctx.restore();
+}
+
+function applySharpen(data,w,h,amount){
+  if(amount<=0) return;
+  const src=new Uint8ClampedArray(data);
+  const a=Math.min(1.2,amount);
+  for(let y=1;y<h-1;y++){
+    for(let x=1;x<w-1;x++){
+      const p=(y*w+x)*4;
+      for(let c=0;c<3;c++){
+        const center=src[p+c]*5;
+        const around=src[p-4+c]+src[p+4+c]+src[p-w*4+c]+src[p+w*4+c];
+        const sharp=center-around;
+        data[p+c]=Math.max(0,Math.min(255,src[p+c]*(1-a)+sharp*a));
+      }
+    }
+  }
+}
+
+function correctedChannel(v,opt){
+  v=Math.max(0,Math.min(255,v+opt.brightness));
+  const gamma=Math.max(0.35,Math.min(2.4,opt.gamma||1));
+  return Math.pow(v/255,1/gamma)*255;
+}
+
+function ditherPreview(canvas,opt){
+  const ctx=canvas.getContext('2d');
+  const im=ctx.getImageData(0,0,canvas.width,canvas.height);
+  const d=im.data,w=canvas.width,h=canvas.height;
+  applySharpen(d,w,h,opt.sharpness);
+  const threshold=Math.max(0,Math.min(255,opt.threshold));
+  const contrast=Math.max(0.2,Math.min(3,opt.contrast));
+  const redSensitivity=Math.max(0,Math.min(1,opt.redSensitivity));
+  const yellowSensitivity=Math.max(0,Math.min(1,opt.yellowSensitivity));
+  const strength=Math.max(0,Math.min(2,opt.dither));
+  const pureBw = strength<=0.001 && (opt.redMode||'normal')==='off';
+  const gray=new Float32Array(w*h);
+  const redScore=new Float32Array(w*h);
+  const yellowScore=new Float32Array(w*h);
+  for(let i=0;i<w*h;i++){
+    let r=d[i*4],g=d[i*4+1],b=d[i*4+2],a=d[i*4+3];
+    if(a<128){r=255;g=255;b=255;}
+    if(opt.invert){r=255-r;g=255-g;b=255-b;}
+    r=correctedChannel(r,opt);
+    g=correctedChannel(g,opt);
+    b=correctedChannel(b,opt);
+    let y=0.299*r+0.587*g+0.114*b;
+    y=Math.max(0,Math.min(255,(y-128)*contrast+128));
+    gray[i]=y;
+    if(pureBw) continue;
+    const mode=opt.redMode||'normal';
+    const modeBias=mode==='strong'?-18:(mode==='safe'?20:(mode==='off'?999:0));
+    const warm=r-Math.max(g,b)*(0.72+redSensitivity*0.18);
+    const saturation=r-Math.min(g,b);
+    redScore[i]=warm+saturation*0.35-modeBias;
+    const yellowBase=Math.min(r,g)-b*(0.72+yellowSensitivity*0.18);
+    const yellowSat=Math.min(r,g)-Math.min(r,g,b);
+    yellowScore[i]=yellowBase+yellowSat*0.30;
+  }
+  if(pureBw){
+    for(let i=0;i<w*h;i++){
+      const p=i*4;
+      const out=gray[i]<threshold?0:255;
+      d[p]=d[p+1]=d[p+2]=out;d[p+3]=255;
+    }
+    ctx.putImageData(im,0,0);
+    return;
+  }
+  const redGate=80-redSensitivity*55;
+  const redLightGate=230-redSensitivity*80;
+  const yellowGate=86-yellowSensitivity*58;
+  const yellowLightGate=238-yellowSensitivity*72;
+  for(let y=0;y<h;y++){
+    for(let x=0;x<w;x++){
+      const idx=y*w+x;
+      const p=idx*4;
+      const old=Math.max(0,Math.min(255,gray[idx]));
+      const isYellow=epdPanelHasYellow&&yellowScore[idx]>yellowGate&&old<yellowLightGate&&yellowScore[idx]>=redScore[idx]-8;
+      if(isYellow){
+        d[p]=210;d[p+1]=165;d[p+2]=24;d[p+3]=255;
+        gray[idx]=255;
+        continue;
+      }
+      const isRed=epdPanelHasRed&&opt.redMode!=='off'&&redScore[idx]>redGate&&old<redLightGate;
+      if(isRed){
+        d[p]=192;d[p+1]=57;d[p+2]=43;d[p+3]=255;
+        gray[idx]=255;
+        continue;
+      }
+      const out=old<threshold?0:255;
+      d[p]=d[p+1]=d[p+2]=out;d[p+3]=255;
+      const e=(old-out)*strength;
+      if(x+1<w) gray[idx+1]+=e*7/16;
+      if(y+1<h){
+        if(x>0) gray[idx+w-1]+=e*3/16;
+        gray[idx+w]+=e*5/16;
+        if(x+1<w) gray[idx+w+1]+=e/16;
+      }
+    }
+  }
+  ctx.putImageData(im,0,0);
+}
+
+function renderPreview(){
+  const canvas=document.getElementById('epdPreview');
+  if(!canvas) return;
+  canvas.width=epdPanelW||128; canvas.height=epdPanelH||296;
+  updatePreviewStageSize();
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  const opt=previewOpts();
+  updatePreviewControlLabels(opt);
+  if(!previewImg){
+    const m=document.getElementById('previewMeta');
+    if(m)m.textContent='选择图片后显示预览。';
+    return;
+  }
+  drawTransformedImage(ctx,previewImg,opt,canvas.width,canvas.height);
+  ditherPreview(canvas,opt);
+  const ts=transformedSize(previewImg,opt);
+  document.getElementById('previewMeta').textContent=
+    '原图 '+previewImg.width+'×'+previewImg.height+'，方向后 '+ts.w+'×'+ts.h+
+    '，输出 '+canvas.width+'×'+canvas.height+'，算法参数已应用到上传图片。';
+}
+
+function buildUploadBlobFromPreview(){
+  return new Promise((resolve,reject)=>{
+    const img=previewImg;
+    if(!img){reject('preview not ready');return;}
+    const opt=previewOpts();
+    const c=document.createElement('canvas');
+    c.width=epdPanelW||128; c.height=epdPanelH||296;
+    const ctx=c.getContext('2d');
+    drawTransformedImage(ctx,img,opt,c.width,c.height);
+    ditherPreview(c,opt);
+    c.toBlob(b=>b?resolve(b):reject('preview export failed'),'image/png');
+  });
+}
+
+async function upload(){
+  const fi=document.getElementById('f');
+  if(!fi.files.length){log('请先选择一张 JPEG 或 PNG 图片。','bad');return;}
+  const file=fi.files[0];
+  document.getElementById('up').disabled=true;
+  log('正在压缩：'+file.name+'（'+fmt(file.size)+'）…');
+  try{
+    const blob=await buildUploadBlobFromPreview();
+    log('压缩完成：'+fmt(file.size)+' → '+fmt(blob.size)+'，正在上传…');
+    log('⏳ 上传 + 图片转换 + 墨水屏刷新中，全程约 15-30 秒，请勿关闭页面…');
+    const r=await fetch('/upload',epdFetchOpts({method:'POST',headers:{'Content-Type':'image/png'},body:blob}));
+    const t=await r.text();
+    await refresh(); await loadGallery();
+    log(r.ok?'✅ 上传成功！墨水屏已刷新':'❌ 上传失败：'+t,(r.ok?'ok':'bad'));
+  }catch(e){log('上传失败：'+e,'bad');}
+  document.getElementById('up').disabled=false;
+}
+
+async function showImg(name){
+  log('⏳ 正在转换并显示 '+name+'，墨水屏刷新约需 15-20 秒…');
+  try{
+    const r=await fetch('/show?name='+encodeURIComponent(name),epdFetchOpts({method:'POST'}));
+    const t=await r.text();
+    log(r.ok?'✅ 显示成功':'❌ '+t,(r.ok?'ok':'bad'));
+  }catch(e){log('显示失败：'+e,'bad');}
+}
+
+async function delImg(name){
+  if(!confirm('删除 '+name+'？')) return;
+  try{
+    const r=await fetch('/delete_image?name='+encodeURIComponent(name),epdFetchOpts({method:'POST'}));
+    await loadGallery(); await refresh();
+    log('已删除 '+name,'ok');
+  }catch(e){log('删除失败：'+e,'bad');}
+}
+
+async function loadGallery(){
+  const g=document.getElementById('gallery');
+  try{
+    const r=await fetch('/images',epdFetchOpts()); const j=await r.json();
+    if(!j.items||j.items.length===0){g.innerHTML='<div class="empty">暂无图片，上传一张试试。</div>';return;}
+    g.innerHTML=j.items.map(i=>`<div class="gcard">
+      <div class="gthumb"><img data-name="${i.name}" loading="lazy" alt="${i.name}"><div class="ph">缩略图加载中…</div></div>
+      <div class="ginfo"><span class="gname" title="${i.name}">${i.name}</span><span class="gsz">${fmt(i.bytes)}</span></div>
+      <div class="gactions">
+        <button class="btn sm" onclick="showImg('${i.name}')">显示</button>
+        <button class="btn ghost sm" onclick="delImg('${i.name}')">删除</button>
+      </div></div>`).join('');
+    loadGalleryThumbs(g);
+  }catch(e){g.innerHTML='<div class="empty bad">画廊加载失败</div>';}
+}
+
+async function loadGalleryThumbs(root){
+  const imgs=Array.from(root.querySelectorAll('img[data-name]')).slice(0,8);
+  for(const img of imgs){
+    const box=img.closest('.gthumb');
+    try{
+      const name=img.getAttribute('data-name');
+      const r=await fetch('/image?name='+encodeURIComponent(name),epdFetchOpts());
+      if(!r.ok){
+        const t=await r.text().catch(()=>'');
+        if(box){
+          box.classList.add('fail');
+          const ph=box.querySelector('.ph');
+          if(ph) ph.textContent=r.status===401?'需要先在配置页保存访问认证':'缩略图读取失败：'+(t||r.status);
+        }
+        continue;
+      }
+      const blob=await r.blob();
+      if(!blob.size) throw new Error('空图片');
+      img.src=URL.createObjectURL(blob);
+      if(box) box.classList.add('loaded');
+    }catch(e){
+      if(box){
+        box.classList.add('fail');
+        const ph=box.querySelector('.ph');
+        if(ph) ph.textContent=location.protocol==='file:'?'请通过设备地址打开页面':'缩略图加载失败';
+      }
+    }
+  }
+}
+function updateNetFromStatus(j){
+  const p=document.getElementById('netPill');
+  const dn=document.getElementById('d_net');
+  if(!p&&!dn) return;
+  if(j&&j.sta_ip){
+    if(p) p.textContent='STA: '+j.sta_ip;
+    if(dn) dn.textContent=j.sta_ssid||j.sta_ip;
+  }else{
+    if(p) p.textContent='AP 模式：192.168.4.1';
+    if(dn) dn.textContent='AP 模式';
+  }
+}
+async function loadNetInfo(){
+  try{
+    const r=await fetch('/wifi_status',epdFetchOpts());const j=await r.json();
+    const p=document.getElementById('netPill');
+    const dn=document.getElementById('d_net');
+    if(j.sta_connected){p.textContent='STA: '+j.sta_ip;dn.textContent=j.sta_ssid||j.sta_ip;}
+    else{p.textContent='AP 模式：192.168.4.1';dn.textContent='AP 模式';}
+  }catch(e){}
+}
+async function loadDashboard(){
+  try{
+    const r=await fetch('/status',epdFetchOpts());
+    updateDashboard(await r.json());
+  }catch(e){}
+}
+
+function initUploadPreview(){
+  applyPreset('photo',false);
+  loadUploadPreviewOptions();
+  updateColorControls();
+  const fi=document.getElementById('f');
+  if(fi){
+    fi.addEventListener('change',()=>{
+      const file=fi.files&&fi.files[0];
+      if(previewUrl){URL.revokeObjectURL(previewUrl); previewUrl=null;}
+      previewImg=null;
+      if(!file){document.getElementById('previewWrap').style.display='none';renderPreview();return;}
+      previewUrl=URL.createObjectURL(file);
+      const img=new Image();
+      img.onload=()=>{
+        previewImg=img;
+        document.getElementById('previewWrap').style.display='grid';
+        renderPreview();
+      };
+      img.onerror=()=>log('图片预览加载失败。','bad');
+      img.src=previewUrl;
+    });
+  }
+  document.querySelectorAll('#rotSeg button').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      previewRot=+(btn.dataset.rot||0);
+      document.querySelectorAll('#rotSeg button').forEach(b=>b.classList.toggle('on',b===btn));
+      saveUploadPreviewOptions();
+      renderPreview();
+    });
+  });
+  document.querySelectorAll('#presetSeg button').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      applyPreset(btn.dataset.preset||'photo',true);
+      renderPreview();
+    });
+  });
+  ['flipX','flipY','fitMode','thr','brightness','contrast','gamma','sharp','redMode','redSens','yellowSens','dither','invertImg'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.addEventListener('input',()=>{markPresetCustom();saveUploadPreviewOptions();renderPreview();});
+    if(el) el.addEventListener('change',()=>{markPresetCustom();saveUploadPreviewOptions();renderPreview();});
+  });
+  renderPreview();
+}
+function updateDashboard(s){
+  document.getElementById('d_time').textContent=s.time_synced?s.time.slice(11,16):'未同步';
+  if(s.spiffs_ok===false){
+    document.getElementById('d_storage').textContent='异常';
+  }else if(s.spiffs_total>0){
+    const used=Number(s.spiffs_used)||0;
+    const total=Number(s.spiffs_total)||0;
+    const free=Math.max(total-used,0);
+    const pct=total>0?(used/total*100):0;
+    document.getElementById('d_storage').textContent='剩余 '+fmtStorage(free);
+    document.getElementById('d_storage').title='已用 '+pct.toFixed(1)+'% / 总 '+fmtStorage(total);
+  }
+  document.getElementById('d_mode').textContent=s.current_mode_label||s.current_mode_name||'-';
+  document.getElementById('d_panel').textContent=compactPanel(s);
+  document.getElementById('d_panel').title=(s.panel_name||'-')+(s.epd_ready?' · EPD ready':' · 初始化中');
+  document.getElementById('d_power').textContent=s.battery_valid?(s.battery_pct+'%'):'--%';
+  document.getElementById('d_power').title=(s.charging?'充电中 · ':'')+fmtVolt(s.battery_mv)+' · ADC '+(s.battery_adc||0);
+  document.getElementById('d_weather').textContent=weatherLabel(s);
+  document.getElementById('d_weather').title=(s.weather_city||'')+(s.weather_update?' · 更新 '+s.weather_update:'');
+  document.getElementById('d_fw').textContent='v'+(s.version||'-');
+  document.getElementById('d_fw').title=(s.idf||'')+' · '+(s.running||'');
+  if(s.free_heap!=null){
+    var hk=Math.round(s.free_heap/1024);
+    var ik=s.internal_free!=null?Math.round(s.internal_free/1024):0;
+    var pk=s.psram_free!=null?Math.round(s.psram_free/1024):0;
+    document.getElementById('d_heap').textContent=hk+'K';
+    document.getElementById('d_heap').title='总空闲 '+hk+'KB · 内部 '+ik+'KB · PSRAM '+pk+'KB';
+  }
+}
+(function(){
+  if(!localStorage.getItem('epd_onboard_done')){
+    var ov=document.createElement('div');
+    ov.className='onboard-overlay';
+    ov.innerHTML='<div class="onboard-card">'+
+      '<h2>欢迎使用墨水屏管理面板</h2>'+
+      '<p>这是你的 ESP32-S3 墨水屏设备控制台，以下是快速上手指南：</p>'+
+      '<ul class="steps">'+
+      '<li><span>1.</span> 在「设备配置」中连接 WiFi，设备将获得稳定 IP 地址</li>'+
+      '<li><span>2.</span> 上传 JPEG/PNG/BMP 图片，自动缩放并显示到墨水屏</li>'+
+      '<li><span>3.</span> 配置天气 API Key，开启天气和时钟显示</li>'+
+      '<li><span>4.</span> 设置课程表、待办事项、倒计时等功能</li>'+
+      '<li><span>5.</span> 使用物理按钮切换显示模式（左=上一个，右=下一个）</li>'+
+      '</ul>'+
+      '<p style="font-size:12px;color:var(--t2)">导航栏在每个页面顶部可快速切换功能。</p>'+
+      '<div style="text-align:right;margin-top:16px">'+
+      '<button class="btn" onclick="localStorage.setItem(\'epd_onboard_done\',\'1\');this.closest(\'.onboard-overlay\').remove()">我知道了，开始使用</button>'+
+      '</div></div>';
+    document.body.appendChild(ov);
+  }
+})();
+initUploadPreview(); refresh(); loadGallery();
+</script>
+</body>
+</html>
