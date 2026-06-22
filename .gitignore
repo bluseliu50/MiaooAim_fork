@@ -6,6 +6,8 @@ sdkconfig.old
 # ESP-IDF managed components (auto-downloaded)
 managed_components/
 dependencies.lock
+# ESP-IDF installer (eim) local config — machine-specific paths, not project source
+eim_config.toml
 
 # IDE / Editor
 .vscode/*

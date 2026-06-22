@@ -9,7 +9,7 @@
 #   make flash         # 烧录（自动探测串口，可用 PORT=/dev/ttyUSB0 覆盖）
 #   make monitor       # 串口监视
 #   make fm            # 编译 + 烧录 + 监视（常用）
-#   make test          # 主机端单元测试（test/lunar）
+#   make test-host     # 主机端单元测试（无需 ESP-IDF）
 #   make clean         # 清理
 #   make fullclean     # 彻底清理（删 build/ sdkconfig 重新配置）
 #
@@ -17,8 +17,9 @@
 #   make flash PORT=/dev/ttyUSB0 BAUD=921600
 #   make fm PORT=/dev/cu.usbmodem1101
 #   make -j8 build
+#   make build IDF_CMD=/path/to/idf.py   # 手动指定 idf.py 路径
 #
-# 前置条件：已安装并激活 ESP-IDF v5.5.1+（执行过 export.sh / export.bat）。
+# 前置条件：已安装并激活 ESP-IDF v5.5.1+（执行过 export.sh）。
 # 本 Makefile 仅在 macOS / Linux 下使用；Windows 用户请直接使用 idf.py。
 # =============================================================================
 
@@ -30,9 +31,6 @@ BAUD        ?= 460800
 
 # 串口设备：未显式指定时按 macOS / Linux 自动探测
 PORT        ?= $(shell ./tools/detect_port.sh 2>/dev/null)
-
-# idf.py 根目录（默认当前目录）
-PROJECT_DIR ?= .
 
 # 并发任务数：默认使用全部 CPU 核心，加速编译
 NPROC       := $(shell (nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null) || echo 8)
@@ -55,18 +53,34 @@ COLOR_YELL  :=
 COLOR_RED   :=
 endif
 
+# ----------------------------------------------------------------------------
+# 解析 idf.py 调用方式（兼容不同 IDF 版本 / 安装方式的激活行为）
+#   1. PATH 上的 idf.py（标准 export.sh 激活后通常可用）
+#   2. $IDF_PATH/tools/idf.py（IDF 设了 IDF_PATH 但未把 tools 放进 PATH 时）
+# 用户也可显式覆盖：make ... IDF_CMD=/path/to/idf.py
+# ----------------------------------------------------------------------------
+idf_by_path := $(shell command -v idf.py 2>/dev/null)
+idf_by_env  := $(if $(IDF_PATH),$(wildcard $(IDF_PATH)/tools/idf.py))
+ifeq ($(idf_by_path),)
+IDF_CMD ?= $(idf_by_env)
+else
+IDF_CMD ?= $(idf_by_path)
+endif
+
+# 检查 idf.py 是否可用（给出最详细的指引）
+define check_idf
+	@if [ -z "$(IDF_CMD)" ]; then \
+		printf "$(COLOR_RED)[ERROR] 未找到 idf.py。请先安装并激活 ESP-IDF v5.5.1+：$(COLOR_RESET)\n"; \
+		printf "    . \"$$HOME/.espressif/*/esp-idf/export.sh\"   (新版安装器)\n"; \
+		printf "    . \"$$HOME/esp/esp-idf/export.sh\"            (经典安装)\n"; \
+		printf "  或手动指定：make ... IDF_CMD=/path/to/idf.py\n"; \
+		printf "  出错退出。\n"; \
+		exit 1; \
+	fi
+endef
+
 # 默认目标
 .DEFAULT_GOAL := help
-
-# 检查 idf.py 是否可用
-define check_idf
-	@command -v idf.py >/dev/null 2>&1 || { \
-		printf "$(COLOR_RED)[ERROR] 未找到 idf.py。请先安装并激活 ESP-IDF v5.5.1+：$(COLOR_RESET)\n"; \
-		printf "    . $$HOME/esp/esp-idf/export.sh   (macOS/Linux)\n"; \
-		printf "    出错退出。\n"; \
-		exit 1; \
-	}
-endef
 
 .PHONY: help setup build flash monitor fm menuconfig size clean fullclean reconfig erase-flash test test-host test-clean tools tools-fonts tools-city
 
@@ -76,21 +90,22 @@ help: ## 显示所有可用目标
 	@printf "$(COLOR_BOLD)常用：$(COLOR_RESET)\n"
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  $(COLOR_GREEN)%-14s$(COLOR_RESET) %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@printf "\n$(COLOR_BOLD)覆盖变量：$(COLOR_RESET)\n"
-	@printf "  PORT=/dev/ttyUSB0   指定串口\n"
-	@printf "  BAUD=921600         指定波特率\n"
-	@printf "  IDF_BUILD_JOBS=8    并发编译任务数（默认 CPU 核心数 = $(NPROC)）\n"
+	@printf "  PORT=/dev/ttyUSB0     指定串口\n"
+	@printf "  BAUD=921600           指定波特率\n"
+	@printf "  IDF_BUILD_JOBS=8      并发编译任务数（默认 CPU 核心数 = $(NPROC)）\n"
+	@printf "  IDF_CMD=/path/idf.py  手动指定 idf.py 路径（激活异常时用）\n"
 
 idf-check:
 	$(check_idf)
 
 setup: idf-check ## 首次配置目标芯片（esp32s3），只需执行一次
 	@printf "$(COLOR_CYAN)[1/1] 设置目标芯片 $(TARGET) ...$(COLOR_RESET)\n"
-	idf.py set-target $(TARGET)
+	$(IDF_CMD) set-target $(TARGET)
 	@printf "$(COLOR_GREEN)[OK] 目标已设置为 $(TARGET)。接下来执行：make fm$(COLOR_RESET)\n"
 
 build: idf-check ## 编译固件
 	@printf "$(COLOR_CYAN)[build] 编译固件（-j$(IDF_BUILD_JOBS)）...$(COLOR_RESET)\n"
-	IDF_BUILD_JOB_COUNT=$(IDF_BUILD_JOBS) idf.py build
+	IDF_BUILD_JOB_COUNT=$(IDF_BUILD_JOBS) $(IDF_CMD) build
 
 # 带串口参数的烧录/监视目标：PORT 探测到则用 -p 传入，否则交给 idf.py 自动探测
 ifeq ($(PORT),)
@@ -103,33 +118,33 @@ endif
 
 flash: idf-check ## 烧录固件到设备（自动探测串口）
 	@printf "$(COLOR_CYAN)[flash] 烧录 ($(PORT_NOTE)) ...$(COLOR_RESET)\n"
-	idf.py $(PORT_ARG) flash
+	$(IDF_CMD) $(PORT_ARG) flash
 
 monitor: idf-check ## 打开串口监视器（自动探测串口）
 	@printf "$(COLOR_CYAN)[monitor] 监视 ($(PORT_NOTE)) ...$(COLOR_RESET)\n"
-	idf.py $(PORT_ARG) monitor
+	$(IDF_CMD) $(PORT_ARG) monitor
 
 fm: build ## 编译 + 烧录 + 监视（最常用）
 	@printf "$(COLOR_CYAN)[fm] 烧录 + 监视 ($(PORT_NOTE)) ...$(COLOR_RESET)\n"
-	idf.py $(PORT_ARG) flash monitor
+	$(IDF_CMD) $(PORT_ARG) flash monitor
 
 erase-flash: idf-check ## 擦除整片 Flash（清空所有配置/图片，谨慎使用）
 	@printf "$(COLOR_RED)[erase-flash] 将清空整片 Flash（WiFi/配置/图片全丢）！3 秒后开始，Ctrl+C 取消$(COLOR_RESET)\n"
 	@sleep 3
-	idf.py $(PORT_ARG) erase-flash
+	$(IDF_CMD) $(PORT_ARG) erase-flash
 
 menuconfig: idf-check ## 打开 menuconfig 配置菜单
-	idf.py menuconfig
+	$(IDF_CMD) menuconfig
 
 size: idf-check ## 查看固件体积 / 分区占用
-	idf.py size
+	$(IDF_CMD) size
 
 clean: idf-check ## 清理构建产物（保留 sdkconfig 与 target 设置）
-	idf.py clean
+	$(IDF_CMD) clean
 
 fullclean: idf-check ## 彻底清理（删 build/ 与 sdkconfig，需重新 make setup）
 	@printf "$(COLOR_YELL)[fullclean] 删除 build/ 与 sdkconfig ...$(COLOR_RESET)\n"
-	idf.py fullclean
+	$(IDF_CMD) fullclean
 	rm -rf build sdkconfig sdkconfig.old
 
 reconfig: fullclean setup ## 彻底清理并重新配置目标芯片（切换芯片或 sdkconfig 损坏时使用）
@@ -145,7 +160,7 @@ test-clean: ## 清理单元测试构建产物
 
 # ----------------------------------------------------------------------------
 # Python 开发工具（通过 uv 管理虚拟环境，脱离 ESP-IDF）
-# 首次使用先执行 `uv sync` 安装依赖；之后可直接 `make tools` 调用。
+# 首次使用先执行 `make tools` 安装依赖；之后可直接调用。
 # ----------------------------------------------------------------------------
 UV ?= uv
 
