@@ -41,6 +41,7 @@ idf_component_register(
         "battery_mon.c"
     INCLUDE_DIRS "."
     EMBED_FILES
+        "${PROJECT_DIR}/web/app.css"
         "${PROJECT_DIR}/web/index.html"
         "${PROJECT_DIR}/web/config.html"
         "${PROJECT_DIR}/web/gallery.html"

@@ -1,327 +1,51 @@
 <!doctype html>
-<html>
+<html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>墨水屏上传</title>
-<script>(function(){document.documentElement.setAttribute('data-theme',localStorage.getItem('epd_theme')||'loopy')})()</script>
-<style>
-/* ── Theme: Loopy (粉蓝梦幻) ── */
-[data-theme="loopy"]{
-  --bg:#FFF0F5;--g1:rgba(255,182,203,.32);--g2:rgba(173,216,250,.28);
-  --cd:#fff;--cb:rgba(255,155,179,.22);--ch:rgba(255,155,179,.10);--cs:0 6px 28px rgba(255,155,179,.13);
-  --sf:rgba(255,236,245,.75);--sb:rgba(255,155,179,.20);
-  --tx:#5A3050;--t2:rgba(120,70,100,.62);
-  --ac:#FF9BB3;--a2:#8CC8F0;--ag:rgba(255,155,179,.28);
-  --bt:#fff;--ok:#2E9E52;--er:#E53935;--wn:#E68A00;
-  --hv:rgba(255,155,179,.10);--tg:rgba(255,155,179,.22);
-  --deco:"🌸"
-}
-/* ── Theme: Hello Kitty (经典红粉) ── */
-[data-theme="kitty"]{
-  --bg:#FFF8F8;--g1:rgba(255,77,109,.18);--g2:rgba(255,215,0,.14);
-  --cd:#fff;--cb:rgba(255,77,109,.17);--ch:rgba(255,77,109,.07);--cs:0 6px 28px rgba(255,77,109,.10);
-  --sf:rgba(255,245,247,.8);--sb:rgba(255,77,109,.14);
-  --tx:#4A1525;--t2:rgba(130,50,70,.58);
-  --ac:#FF4D6D;--a2:#FFB347;--ag:rgba(255,77,109,.24);
-  --bt:#fff;--ok:#2E9E52;--er:#D32F2F;--wn:#E68A00;
-  --hv:rgba(255,77,109,.07);--tg:rgba(255,77,109,.15);
-  --deco:"🎀"
-}
-/* ── Theme: 草莓熊 (浆果玫瑰) ── */
-[data-theme="lotso"]{
-  --bg:#FBF0F3;--g1:rgba(183,70,120,.20);--g2:rgba(232,160,184,.18);
-  --cd:#fff;--cb:rgba(183,70,120,.17);--ch:rgba(183,70,120,.07);--cs:0 6px 28px rgba(183,70,120,.10);
-  --sf:rgba(251,238,244,.8);--sb:rgba(183,70,120,.14);
-  --tx:#4A1428;--t2:rgba(120,40,70,.58);
-  --ac:#B74678;--a2:#E8A0B8;--ag:rgba(183,70,120,.24);
-  --bt:#fff;--ok:#2E9E52;--er:#C62828;--wn:#E68A00;
-  --hv:rgba(183,70,120,.07);--tg:rgba(183,70,120,.15);
-  --deco:"🍓"
-}
-/* ── Base ── */
-*{box-sizing:border-box;transition:background-color .35s,border-color .35s,color .3s,box-shadow .35s}
-body{margin:0;font-family:'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;
-  background:radial-gradient(1200px 800px at 20% -10%,var(--g1),transparent 60%),
-  radial-gradient(900px 600px at 100% 0%,var(--g2),transparent 55%),var(--bg);
-  color:var(--tx);min-height:100vh}
-.wrap{max-width:1380px;margin:0 auto;padding:24px 18px}
-.hdr{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap}
-.title{font-weight:800;letter-spacing:.2px;font-size:20px}
-.pill{font-size:12px;color:var(--t2);padding:7px 11px;border:1px solid var(--cb);border-radius:999px;background:var(--sf);white-space:nowrap}
-.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,390px);gap:20px;align-items:start}
-/* ── Cards ── */
-.card{position:relative;background:var(--cd);border:1px solid var(--cb);border-radius:18px;overflow:hidden;box-shadow:var(--cs)}
-.card .hd{position:relative;padding:18px 20px 8px;background:linear-gradient(180deg,var(--ch),transparent)}
-.card .hd::after{content:var(--deco);position:absolute;top:12px;right:14px;font-size:16px;opacity:.55;pointer-events:none}
-.card .bd{padding:18px 20px 20px}
-.sub{color:var(--t2);font-size:13px;line-height:1.5}
-.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-input[type=file]{padding:10px;background:var(--sf);border:1px solid var(--sb);color:var(--tx);border-radius:12px;max-width:220px;font-size:13px}
-/* ── Buttons ── */
-.btn{cursor:pointer;border:0;border-radius:12px;padding:10px 14px;font-weight:700;font-size:13px;color:var(--bt);
-  background:linear-gradient(135deg,var(--ac),var(--a2));box-shadow:0 6px 20px var(--ag);transition:filter .2s,transform .15s}
-.btn:hover{filter:brightness(1.06);transform:translateY(-1px)}
-.btn.ghost{background:var(--sf);color:var(--tx);border:1px solid var(--cb);box-shadow:none}
-.btn.ghost:hover{background:var(--hv);border-color:var(--ac)}
-.btn.sm{padding:6px 10px;font-size:12px;border-radius:8px}
-.btn:disabled{opacity:.55;cursor:not-allowed;transform:none;filter:none}
-/* ── Data ── */
-.kv{display:grid;grid-template-columns:130px 1fr;gap:8px 12px;font-size:13px}
-.k{color:var(--t2)}.v{font-weight:700}
-.log{margin-top:12px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;
-  background:var(--sf);border:1px solid var(--sb);border-radius:12px;padding:12px;min-height:86px;white-space:pre-wrap}
-.ok{color:var(--ok)}.bad{color:var(--er)}
-.bar-wrap{height:6px;background:var(--sb);border-radius:3px;margin-top:6px;overflow:hidden}
-.bar-fill{height:100%;border-radius:3px;transition:width .4s}
-/* ── Gallery ── */
-.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:8px}
-.gcard{background:var(--sf);border:1px solid var(--sb);border-radius:14px;overflow:hidden;transition:transform .15s,border-color .2s}
-.gcard:hover{border-color:var(--ac);transform:translateY(-2px)}
-.gthumb{position:relative;aspect-ratio:4/3;background:rgba(0,0,0,.04);overflow:hidden}
-.gcard img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:rgba(0,0,0,.04)}
-.gthumb img{height:100%;aspect-ratio:auto}
-.gthumb .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:10px;color:var(--t2);font-size:12px;line-height:1.45;background:rgba(255,255,255,.36)}
-.gthumb.loaded .ph{display:none}
-.gthumb.fail .ph{color:var(--er);background:rgba(229,57,53,.06)}
-.gcard .ginfo{padding:8px 10px 4px;display:flex;justify-content:space-between;align-items:center}
-.gcard .gname{font-size:11px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px}
-.gcard .gsz{font-size:11px;font-weight:700;color:var(--tx)}
-.gcard .gactions{padding:4px 10px 10px;display:flex;gap:6px}
-.empty{text-align:center;padding:32px;color:var(--t2);font-size:14px}
-.fullcard{margin-top:0}
-.stack-col{display:flex;flex-direction:column;gap:18px;min-width:0}
-.status-card{position:sticky;top:18px}
-.upload-card{overflow:visible}
-/* ── Nav Bar ── */
-.nav{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
-.nav a{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:12px;font-size:13px;font-weight:700;
-  color:var(--tx);background:var(--cd);border:1px solid var(--cb);text-decoration:none;transition:all .2s;white-space:nowrap}
-.nav a:hover{border-color:var(--ac);background:var(--hv);transform:translateY(-1px)}
-.nav a.active{border-color:var(--ac);color:var(--ac);background:var(--hv);box-shadow:0 2px 8px var(--ag)}
-.nav .ni{font-size:15px}
-/* ── Dashboard ── */
-.dash{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:10px;margin-bottom:22px}
-.dash-item{background:rgba(255,255,255,.86);border:1px solid var(--cb);border-radius:16px;padding:13px 8px;text-align:center;min-height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 5px 18px rgba(255,155,179,.07)}
-.dash-icon{font-size:21px;margin-bottom:6px}
-.dash-label{font-size:11px;color:var(--t2)}
-.dash-value{font-size:15px;font-weight:800;margin-top:3px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.upload-bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}
-.upload-card input[type=file]{width:100%;max-width:none;min-width:0}
-.preview-wrap{--preview-pane-max:420px;display:grid;grid-template-columns:minmax(240px,var(--preview-pane-max)) minmax(320px,1fr);gap:18px;margin-top:16px;align-items:start}
-.preview-pane{display:grid;gap:10px;min-width:0;width:100%;max-width:var(--preview-pane-max);position:sticky;top:18px;z-index:2}
-.preview-stage{width:100%;aspect-ratio:var(--preview-aspect,128/296);background:linear-gradient(180deg,#fff,var(--sf));border:1px solid var(--sb);border-radius:14px;padding:14px;display:flex;justify-content:center;align-items:center;overflow:hidden}
-.preview-stage canvas{display:block;width:100%;height:100%;background:#fff;border:1px solid rgba(0,0,0,.16);box-shadow:0 8px 22px rgba(0,0,0,.08);image-rendering:pixelated}
-.preview-controls{display:grid;grid-template-columns:1fr;gap:12px;align-content:start;min-width:0}
-.tool-section{display:grid;gap:10px;padding:12px;border:1px solid var(--sb);border-radius:14px;background:rgba(255,255,255,.42);min-width:0;overflow:hidden}
-.tool-section.wide{grid-column:1/-1}
-.tool-title{font-size:12px;color:var(--t2);font-weight:900;letter-spacing:.08em}
-.ctrl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px 12px;min-width:0}
-.ctrl-line{display:grid;gap:6px;align-items:center;min-width:0}
-.ctrl-line.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.ctrl-line.wide{grid-column:1/-1}
-.ctrl-line.color-unsupported{display:none}
-.ctrl-line label{display:flex;gap:8px;align-items:center;justify-content:space-between;min-width:0;font-size:12px;color:var(--t2);font-weight:800}
-.ctrl-line label span{color:var(--tx);font-weight:900;white-space:nowrap}
-.preview-controls select,.preview-controls input[type=range]{display:block;width:100%;max-width:100%;min-width:0}
-.preview-controls select{padding:8px 10px;background:var(--sf);border:1px solid var(--sb);color:var(--tx);border-radius:10px;font-size:12px;font-weight:700}
-.preview-controls input[type=range]{accent-color:var(--ac)}
-.seg{display:inline-flex;gap:4px;padding:3px;border:1px solid var(--sb);border-radius:10px;background:var(--sf)}
-.seg button{border:0;background:transparent;color:var(--tx);border-radius:7px;padding:6px 8px;font-size:12px;font-weight:800;cursor:pointer}
-.seg button.on{background:var(--cd);color:var(--ac);box-shadow:0 1px 6px var(--ag)}
-.check{display:inline-flex;gap:5px;align-items:center;font-size:12px;color:var(--tx);font-weight:700}
-.preview-meta{font-size:12px;color:var(--t2);line-height:1.55;background:var(--sf);border:1px solid var(--sb);border-radius:12px;padding:10px}
-.status-card .bd{padding-top:22px}
-.status-card .kv{grid-template-columns:92px 1fr;gap:10px 14px;align-items:start}
-.status-card .v{line-height:1.45;word-break:break-word}
-/* ── Onboarding ── */
-.onboard-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:flex;align-items:center;justify-content:center}
-.onboard-card{background:var(--cd);border-radius:18px;padding:22px 22px;max-width:420px;width:90%;box-shadow:0 16px 48px rgba(0,0,0,.2)}
-.onboard-card h2{margin:0 0 10px;font-size:17px;line-height:1.25}
-.onboard-card p{font-size:12px;line-height:1.6;color:var(--t2);margin:0 0 7px}
-.onboard-card .steps{list-style:none;padding:0;margin:12px 0}
-.onboard-card .steps li{padding:7px 0;font-size:12px;line-height:1.45;border-bottom:1px solid var(--sb)}
-.onboard-card .steps li span{font-weight:700;color:var(--ac);margin-right:6px}
-/* ── Theme Switcher ── */
-.tsw{display:flex;gap:5px;align-items:center}
-.tsw button{cursor:pointer;border:2px solid transparent;border-radius:999px;padding:4px 10px 4px 7px;
-  font-size:11px;font-weight:600;color:var(--t2);background:var(--cd);display:flex;align-items:center;gap:5px;transition:all .2s;white-space:nowrap;line-height:1}
-.tsw button:hover{border-color:var(--sb);transform:translateY(-1px)}
-.tsw button.on{border-color:var(--ac);color:var(--ac);box-shadow:0 2px 10px var(--ag);font-weight:800}
-.tsw button:focus{outline:none}
-.tsw button:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
-.td{width:16px;height:16px;border-radius:50%;display:block;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.1)}
-@media(max-width:1180px){.wrap{max-width:940px}.dash{grid-template-columns:repeat(3,minmax(130px,1fr))}}
-@media(max-width:860px){.grid{grid-template-columns:1fr}.hdr{gap:10px}.status-card{position:relative;top:auto}}
-@media(max-width:1040px){.preview-wrap{grid-template-columns:1fr}.preview-pane{position:relative;top:auto;max-width:min(100%,var(--preview-pane-max))}}
-@media(max-width:640px){.upload-bar{grid-template-columns:1fr}.preview-controls{grid-template-columns:1fr}.ctrl-grid{grid-template-columns:1fr}.seg{width:100%}.seg button{flex:1;padding-left:6px;padding-right:6px}}
-@media(max-width:640px){.dash{grid-template-columns:repeat(2,minmax(120px,1fr))}.wrap{padding:16px 12px}}
-@media(max-width:480px){.tsw button{padding:4px 7px 4px 5px;font-size:10px}.td{width:13px;height:13px}}
-/* ── Mascot ── */
-.mascot{flex-shrink:0}
-.mascot svg{display:none;width:64px;height:64px;filter:drop-shadow(0 3px 8px rgba(0,0,0,.08));animation:m-bob 3s ease-in-out infinite}
-[data-theme="loopy"] .m-loopy,[data-theme="kitty"] .m-kitty,[data-theme="lotso"] .m-lotso{display:block}
-@keyframes m-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-@media(max-width:480px){.mascot svg{width:48px;height:48px}}
-/* ── Side Decorations ── */
-.side-deco{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
-.wrap{position:relative;z-index:1}
-.sd-g{display:none;width:100%;height:100%}
-[data-theme="loopy"] .sd-g.sl{display:block}
-[data-theme="kitty"] .sd-g.sk{display:block}
-[data-theme="lotso"] .sd-g.so{display:block}
-.wm{position:absolute}
-.sd{position:absolute;animation:sdd 8s ease-in-out infinite}
-.sd:nth-child(even){animation-direction:alternate-reverse;animation-duration:11s}
-@keyframes sdd{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-12px) rotate(4deg)}}
-@media(max-width:1000px){.side-deco{display:none}}
-.epd-credit{margin-top:20px;padding-top:14px;border-top:1px solid var(--cb);font-size:12px;color:var(--t2);text-align:center;line-height:1.6}
-.epd-credit strong{color:var(--tx);font-weight:700}
-.epd-credit a{color:var(--ac);font-weight:600;text-decoration:none}
-.epd-credit a:hover{text-decoration:underline}
-/* Unified page navigation */
-.nav{width:min(1180px,calc(100vw - 32px));display:flex;align-items:center;gap:8px;margin:0 0 18px 50%;padding:8px;overflow-x:auto;flex-wrap:nowrap;border-radius:18px;background:rgba(255,255,255,.60);border:1px solid var(--cb);box-shadow:0 8px 22px rgba(255,155,179,.10);scrollbar-width:none;-webkit-overflow-scrolling:touch;transform:translateX(-50%)}
-.nav::-webkit-scrollbar{display:none}
-.nav a{flex:0 0 auto;min-height:38px;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:0 13px;border-radius:12px;font-size:13px;font-weight:800;line-height:1;color:var(--tx);background:rgba(255,255,255,.78);border:1px solid var(--cb);text-decoration:none;white-space:nowrap;box-shadow:0 4px 12px rgba(255,155,179,.08)}
-.nav .ni{width:18px;min-width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:15px;line-height:1}
-.nav a:hover,.nav a.active{color:var(--ac);border-color:var(--ac);background:var(--hv);transform:translateY(-1px);box-shadow:0 0 0 2px var(--ag)}
-@media(max-width:640px){.nav{width:calc(100vw - 24px);padding:7px;gap:7px;border-radius:16px}.nav a{min-height:36px;padding:0 11px;font-size:12px}}
-</style>
-<style id="unified-shell-v2">
-/* Unified app shell v2: keep page size, nav, cards and form rhythm consistent. */
-body{overflow-y:scroll}
-body .wrap{width:min(1180px,calc(100vw - 32px));max-width:1180px!important;margin:0 auto!important;padding:24px 0 36px!important}
-body.page-upload .wrap{width:min(1180px,calc(100vw - 32px));max-width:1180px!important}
-body.page-config .wrap,body.page-board .wrap{width:min(1380px,calc(100vw - 36px));max-width:1380px!important}
-body.page-config .page{width:min(1180px,calc(100vw - 32px))!important;max-width:1180px!important;margin:24px auto 36px!important}
-body.page-board{overflow:hidden}
-body .hdr{width:100%;min-height:46px;margin:0 0 16px!important;align-items:center}
-body .hdr .title{line-height:1.25}
-body .nav{width:min(1180px,100%)!important;max-width:100%!important;margin:0 auto 20px!important;transform:none!important;justify-content:center!important}
-body .nav a{flex:0 0 88px!important;width:88px!important;min-width:88px!important;max-width:88px!important;padding:0 6px!important;gap:5px!important;overflow:hidden!important}
-body .card{border-radius:16px!important}
-body.page-panel .card,body.page-task .card{width:100%;margin-left:auto!important;margin-right:auto!important}
-body.page-panel .wrap>.row,body.page-panel .wrap>.log,body.page-task .wrap>.row,body.page-task .wrap>.log{width:100%;margin-left:auto!important;margin-right:auto!important}
-body.page-panel .card .hd,body.page-task .card .hd{padding:20px 22px 12px!important}
-body.page-panel .card .bd,body.page-task .card .bd{padding:18px 22px 22px!important}
-body.page-panel .card .bd{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px;align-items:start}
-body.page-panel .card .bd>.kv,body.page-panel .card .bd>.row,body.page-panel .card .bd>.log{grid-column:1/-1}
-body.page-panel .card .bd>.form-row{margin-bottom:0!important}
-body.page-panel select,body.page-panel input[type=text],body.page-panel input[type=password],body.page-panel input[type=number],body.page-panel textarea{max-width:none!important}
-body.page-panel #cityResults{max-width:none!important}
-body.page-task .wrap>.row{margin-top:16px}
-body.page-upload .card,body.page-config .card{width:100%}
-body.page-gallery .card,body.page-timetable .card{width:100%;margin-left:auto!important;margin-right:auto!important}
-body.page-gallery .wrap>.row,body.page-gallery .wrap>.log,body.page-timetable .wrap>.row,body.page-timetable .wrap>.log{width:100%;margin-left:auto!important;margin-right:auto!important}
-body .epd-credit{width:100%;max-width:100%!important;margin-left:auto!important;margin-right:auto!important}
-@media(max-width:760px){body .wrap,body.page-upload .wrap{width:calc(100vw - 24px);padding:16px 0 28px!important}body.page-config .page{width:calc(100vw - 24px)!important;margin-top:16px!important}body.page-panel .card .bd{grid-template-columns:1fr}body .nav{margin-bottom:16px!important;justify-content:flex-start!important}}
-</style>
-</head>
-<body class="page-shell page-upload page-wide">
-<div class="side-deco">
-  <div class="sd-g sl">
-    <svg class="wm" style="left:1%;top:5%;width:200px;height:200px;opacity:.055" viewBox="0 0 100 100"><circle cx="22" cy="28" r="11" fill="#FFB5C8"/><circle cx="78" cy="28" r="11" fill="#FFB5C8"/><circle cx="50" cy="55" r="36" fill="#FFB5C8"/><ellipse cx="50" cy="62" rx="20" ry="14" fill="#FFD6E0"/><circle cx="28" cy="58" r="6" fill="#FF8FA8" opacity=".5"/><circle cx="72" cy="58" r="6" fill="#FF8FA8" opacity=".5"/></svg>
-    <svg class="wm" style="right:1%;bottom:8%;width:180px;height:180px;opacity:.045;transform:scaleX(-1)" viewBox="0 0 100 100"><circle cx="22" cy="28" r="11" fill="#FFB5C8"/><circle cx="78" cy="28" r="11" fill="#FFB5C8"/><circle cx="50" cy="55" r="36" fill="#FFB5C8"/><ellipse cx="50" cy="62" rx="20" ry="14" fill="#FFD6E0"/><circle cx="28" cy="58" r="6" fill="#FF8FA8" opacity=".5"/><circle cx="72" cy="58" r="6" fill="#FF8FA8" opacity=".5"/></svg>
-    <span class="sd" style="left:2%;top:15%;font-size:32px;opacity:.2">🌸</span>
-    <span class="sd" style="left:7%;top:35%;font-size:22px;opacity:.14;animation-delay:-2s">💗</span>
-    <span class="sd" style="left:3%;top:55%;font-size:28px;opacity:.18;animation-delay:-4s">✨</span>
-    <span class="sd" style="left:6%;top:75%;font-size:20px;opacity:.14;animation-delay:-6s">🌷</span>
-    <span class="sd" style="left:1%;top:90%;font-size:24px;opacity:.16;animation-delay:-1s">💗</span>
-    <span class="sd" style="right:3%;top:12%;font-size:26px;opacity:.18;animation-delay:-.5s">💗</span>
-    <span class="sd" style="right:6%;top:32%;font-size:32px;opacity:.2;animation-delay:-2.5s">🌸</span>
-    <span class="sd" style="right:2%;top:52%;font-size:20px;opacity:.14;animation-delay:-4.5s">✨</span>
-    <span class="sd" style="right:5%;top:72%;font-size:28px;opacity:.18;animation-delay:-6.5s">🌸</span>
-    <span class="sd" style="right:1%;top:88%;font-size:22px;opacity:.14;animation-delay:-1.5s">🌷</span>
-  </div>
-  <div class="sd-g sk">
-    <svg class="wm" style="left:1%;top:5%;width:200px;height:200px;opacity:.055" viewBox="0 0 100 100"><path d="M28,38 L18,6 L44,30Z" fill="#FFD0D8"/><path d="M72,38 L82,6 L56,30Z" fill="#FFD0D8"/><ellipse cx="50" cy="55" rx="36" ry="33" fill="#FFD0D8"/><circle cx="18" cy="16" r="9" fill="#FF4D6D" opacity=".6"/><circle cx="12" cy="11" r="6.5" fill="#FF6B88" opacity=".6"/><circle cx="24" cy="11" r="6.5" fill="#FF6B88" opacity=".6"/></svg>
-    <svg class="wm" style="right:1%;bottom:8%;width:180px;height:180px;opacity:.045;transform:scaleX(-1)" viewBox="0 0 100 100"><path d="M28,38 L18,6 L44,30Z" fill="#FFD0D8"/><path d="M72,38 L82,6 L56,30Z" fill="#FFD0D8"/><ellipse cx="50" cy="55" rx="36" ry="33" fill="#FFD0D8"/><circle cx="18" cy="16" r="9" fill="#FF4D6D" opacity=".6"/><circle cx="12" cy="11" r="6.5" fill="#FF6B88" opacity=".6"/><circle cx="24" cy="11" r="6.5" fill="#FF6B88" opacity=".6"/></svg>
-    <span class="sd" style="left:2%;top:15%;font-size:32px;opacity:.2">🎀</span>
-    <span class="sd" style="left:7%;top:35%;font-size:22px;opacity:.14;animation-delay:-2s">❤️</span>
-    <span class="sd" style="left:3%;top:55%;font-size:28px;opacity:.18;animation-delay:-4s">⭐</span>
-    <span class="sd" style="left:6%;top:75%;font-size:20px;opacity:.14;animation-delay:-6s">🎀</span>
-    <span class="sd" style="left:1%;top:90%;font-size:24px;opacity:.16;animation-delay:-1s">💛</span>
-    <span class="sd" style="right:3%;top:12%;font-size:26px;opacity:.18;animation-delay:-.5s">🎀</span>
-    <span class="sd" style="right:6%;top:32%;font-size:32px;opacity:.2;animation-delay:-2.5s">❤️</span>
-    <span class="sd" style="right:2%;top:52%;font-size:20px;opacity:.14;animation-delay:-4.5s">⭐</span>
-    <span class="sd" style="right:5%;top:72%;font-size:28px;opacity:.18;animation-delay:-6.5s">🎀</span>
-    <span class="sd" style="right:1%;top:88%;font-size:22px;opacity:.14;animation-delay:-1.5s">💛</span>
-  </div>
-  <div class="sd-g so">
-    <svg class="wm" style="left:1%;top:5%;width:200px;height:200px;opacity:.055" viewBox="0 0 100 100"><circle cx="22" cy="24" r="13" fill="#D06888"/><circle cx="22" cy="24" r="7" fill="#E8A8C0"/><circle cx="78" cy="24" r="13" fill="#D06888"/><circle cx="78" cy="24" r="7" fill="#E8A8C0"/><circle cx="50" cy="55" r="36" fill="#D06888"/><ellipse cx="50" cy="63" rx="18" ry="12" fill="#F0C8D8"/></svg>
-    <svg class="wm" style="right:1%;bottom:8%;width:180px;height:180px;opacity:.045;transform:scaleX(-1)" viewBox="0 0 100 100"><circle cx="22" cy="24" r="13" fill="#D06888"/><circle cx="22" cy="24" r="7" fill="#E8A8C0"/><circle cx="78" cy="24" r="13" fill="#D06888"/><circle cx="78" cy="24" r="7" fill="#E8A8C0"/><circle cx="50" cy="55" r="36" fill="#D06888"/><ellipse cx="50" cy="63" rx="18" ry="12" fill="#F0C8D8"/></svg>
-    <span class="sd" style="left:2%;top:15%;font-size:32px;opacity:.2">🍓</span>
-    <span class="sd" style="left:7%;top:35%;font-size:22px;opacity:.14;animation-delay:-2s">💗</span>
-    <span class="sd" style="left:3%;top:55%;font-size:28px;opacity:.18;animation-delay:-4s">🍓</span>
-    <span class="sd" style="left:6%;top:75%;font-size:20px;opacity:.14;animation-delay:-6s">🌺</span>
-    <span class="sd" style="left:1%;top:90%;font-size:24px;opacity:.16;animation-delay:-1s">💗</span>
-    <span class="sd" style="right:3%;top:12%;font-size:26px;opacity:.18;animation-delay:-.5s">🍓</span>
-    <span class="sd" style="right:6%;top:32%;font-size:32px;opacity:.2;animation-delay:-2.5s">💗</span>
-    <span class="sd" style="right:2%;top:52%;font-size:20px;opacity:.14;animation-delay:-4.5s">🍓</span>
-    <span class="sd" style="right:5%;top:72%;font-size:28px;opacity:.18;animation-delay:-6.5s">🌺</span>
-    <span class="sd" style="right:1%;top:88%;font-size:22px;opacity:.14;animation-delay:-1.5s">🍓</span>
-  </div>
-</div>
+<title>上传 — 喵喵墨水屏</title>
+<link rel="stylesheet" href="/app.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0">
+</head><body class="page-upload">
 <div class="wrap">
   <div class="hdr">
-    <div style="display:flex;align-items:center;gap:12px">
-      <div class="mascot">
-        <svg class="m-loopy" viewBox="0 0 100 100"><circle cx="22" cy="25" r="12" fill="#FFB5C8" stroke="#E88AA6" stroke-width="2"/><circle cx="78" cy="25" r="12" fill="#FFB5C8" stroke="#E88AA6" stroke-width="2"/><circle cx="50" cy="55" r="38" fill="#FFB5C8" stroke="#E88AA6" stroke-width="2"/><ellipse cx="50" cy="62" rx="22" ry="16" fill="#FFDCE6"/><ellipse cx="37" cy="48" rx="7" ry="8" fill="#fff" stroke="#555" stroke-width="1.5"/><ellipse cx="63" cy="48" rx="7" ry="8" fill="#fff" stroke="#555" stroke-width="1.5"/><circle cx="39" cy="47" r="4" fill="#333"/><circle cx="65" cy="47" r="4" fill="#333"/><circle cx="40.5" cy="45" r="1.5" fill="#fff"/><circle cx="66.5" cy="45" r="1.5" fill="#fff"/><circle cx="26" cy="60" r="7" fill="#FF8FA8" opacity=".45"/><circle cx="74" cy="60" r="7" fill="#FF8FA8" opacity=".45"/><ellipse cx="50" cy="58" rx="3" ry="2" fill="#E88AA6"/><path d="M43,66 Q50,73 57,66" fill="none" stroke="#D07090" stroke-width="2" stroke-linecap="round"/></svg>
-        <svg class="m-kitty" viewBox="0 0 100 100"><path d="M25,35 L15,5 L45,28Z" fill="#fff" stroke="#555" stroke-width="2" stroke-linejoin="round"/><path d="M75,35 L85,5 L55,28Z" fill="#fff" stroke="#555" stroke-width="2" stroke-linejoin="round"/><ellipse cx="50" cy="55" rx="38" ry="35" fill="#fff" stroke="#555" stroke-width="2"/><circle cx="18" cy="15" r="9" fill="#FF4D6D"/><circle cx="10" cy="10" r="7" fill="#FF6B88"/><circle cx="26" cy="10" r="7" fill="#FF6B88"/><circle cx="18" cy="12" r="2.5" fill="#FFD700"/><ellipse cx="38" cy="52" rx="3" ry="3.5" fill="#333"/><ellipse cx="62" cy="52" rx="3" ry="3.5" fill="#333"/><ellipse cx="50" cy="60" rx="3" ry="2" fill="#FFD700"/><line x1="5" y1="52" x2="28" y2="56" stroke="#555" stroke-width="1.2"/><line x1="5" y1="59" x2="28" y2="60" stroke="#555" stroke-width="1.2"/><line x1="5" y1="66" x2="28" y2="64" stroke="#555" stroke-width="1.2"/><line x1="95" y1="52" x2="72" y2="56" stroke="#555" stroke-width="1.2"/><line x1="95" y1="59" x2="72" y2="60" stroke="#555" stroke-width="1.2"/><line x1="95" y1="66" x2="72" y2="64" stroke="#555" stroke-width="1.2"/></svg>
-        <svg class="m-lotso" viewBox="0 0 100 100"><circle cx="20" cy="22" r="14" fill="#D06888" stroke="#B74678" stroke-width="2"/><circle cx="20" cy="22" r="8" fill="#E8A8C0"/><circle cx="80" cy="22" r="14" fill="#D06888" stroke="#B74678" stroke-width="2"/><circle cx="80" cy="22" r="8" fill="#E8A8C0"/><circle cx="50" cy="55" r="38" fill="#D06888" stroke="#B74678" stroke-width="2"/><ellipse cx="50" cy="64" rx="20" ry="14" fill="#F0C8D8"/><ellipse cx="36" cy="48" rx="6" ry="7" fill="#fff" stroke="#555" stroke-width="1.5"/><ellipse cx="64" cy="48" rx="6" ry="7" fill="#fff" stroke="#555" stroke-width="1.5"/><circle cx="37.5" cy="47" r="3.5" fill="#333"/><circle cx="65.5" cy="47" r="3.5" fill="#333"/><circle cx="39" cy="45" r="1.2" fill="#fff"/><circle cx="67" cy="45" r="1.2" fill="#fff"/><path d="M29,40 Q34,36 42,39" fill="none" stroke="#8A3050" stroke-width="2" stroke-linecap="round"/><path d="M58,39 Q66,36 71,40" fill="none" stroke="#8A3050" stroke-width="2" stroke-linecap="round"/><ellipse cx="50" cy="60" rx="5" ry="3.5" fill="#9B3F6B"/><path d="M40,69 Q50,77 60,69" fill="none" stroke="#8A3050" stroke-width="2" stroke-linecap="round"/></svg>
-      </div>
-      <div class="title">墨水屏上传面板</div>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <div class="tsw" id="themeSw">
-        <button type="button" data-t="loopy" aria-pressed="false" onclick="setTheme('loopy')"><span class="td" style="background:linear-gradient(135deg,#FF9BB3,#8CC8F0)"></span>Loopy</button>
-        <button type="button" data-t="kitty" aria-pressed="false" onclick="setTheme('kitty')"><span class="td" style="background:linear-gradient(135deg,#FF4D6D,#FFB347)"></span>Kitty</button>
-        <button type="button" data-t="lotso" aria-pressed="false" onclick="setTheme('lotso')"><span class="td" style="background:linear-gradient(135deg,#B74678,#E8A0B8)"></span>草莓熊</button>
-      </div>
-      <div class="pill" id="netPill">ESP32-S3</div>
-    </div>
+    <div><div class="title">上传与图库</div></div>
+    <div class="pill" id="netPill">ESP32-S3</div>
   </div>
+  <nav class="nav">
+    <a href="/" class="active"><span class="msym sm">upload</span>上传</a>
+    <a href="/gallery"><span class="msym sm">view_carousel</span>轮播</a>
+    <a href="/weather"><span class="msym sm">cloud</span>天气</a>
+    <a href="/clock"><span class="msym sm">schedule</span>时钟</a>
+    <a href="/calendar"><span class="msym sm">calendar_month</span>日历</a>
+    <a href="/timetable"><span class="msym sm">grid_on</span>课表</a>
+    <a href="/todo"><span class="msym sm">check_box</span>待办</a>
+    <a href="/countdown"><span class="msym sm">timer</span>倒计时</a>
+    <a href="/message"><span class="msym sm">subject</span>文字</a>
+    <a href="/board"><span class="msym sm">draw</span>画布</a>
+    <a href="/codex"><span class="msym sm">monitoring</span>额度</a>
+    <a href="/config"><span class="msym sm">settings</span>配置</a>
+  </nav>
 
-  <!-- Navigation -->
-  <div class="nav">
-    <a href="/" class="active"><span class="ni">🖼</span> 上传</a>
-    <a href="/gallery"><span class="ni">🔁</span> 轮播</a>
-    <a href="/weather"><span class="ni">🌤</span> 天气</a>
-    <a href="/clock"><span class="ni">🕐</span> 时钟</a>
-    <a href="/calendar"><span class="ni">🗓</span> 日历</a>
-    <a href="/timetable"><span class="ni">📅</span> 课程表</a>
-    <a href="/todo"><span class="ni">✅</span> 待办</a>
-    <a href="/countdown"><span class="ni">⏳</span> 倒计时</a>
-    <a href="/message"><span class="ni">💬</span> 文字留言</a>
-    <a href="/board"><span class="ni">🎨</span> 画布留言</a>
-    <a href="/codex"><span class="ni">📊</span> 额度</a>
-    <a href="/config"><span class="ni">⚙</span> 设备配置</a>
-  </div>
-
-  <!-- Dashboard -->
   <div class="dash" id="dash">
-    <div class="dash-item"><div class="dash-icon">📡</div><div class="dash-label">网络</div><div class="dash-value" id="d_net">-</div></div>
-    <div class="dash-item"><div class="dash-icon">🖥</div><div class="dash-label">当前模式</div><div class="dash-value" id="d_mode">-</div></div>
-    <div class="dash-item"><div class="dash-icon">🕐</div><div class="dash-label">设备时间</div><div class="dash-value" id="d_time">-</div></div>
-    <div class="dash-item"><div class="dash-icon">📺</div><div class="dash-label">屏幕</div><div class="dash-value" id="d_panel">-</div></div>
-    <div class="dash-item"><div class="dash-icon">💾</div><div class="dash-label">存储</div><div class="dash-value" id="d_storage">-</div></div>
-    <div class="dash-item"><div class="dash-icon">🔋</div><div class="dash-label">电量</div><div class="dash-value" id="d_power">-</div></div>
-    <div class="dash-item"><div class="dash-icon">🌤</div><div class="dash-label">天气</div><div class="dash-value" id="d_weather">-</div></div>
-    <div class="dash-item"><div class="dash-icon">🏷</div><div class="dash-label">固件</div><div class="dash-value" id="d_fw">-</div></div>
-    <div class="dash-item"><div class="dash-icon">🧠</div><div class="dash-label">内存</div><div class="dash-value" id="d_heap">-</div></div>
+    <div class="dash-item"><div class="dash-label">网络</div><div class="dash-value" id="d_net">-</div></div>
+    <div class="dash-item"><div class="dash-label">当前模式</div><div class="dash-value" id="d_mode">-</div></div>
+    <div class="dash-item"><div class="dash-label">设备时间</div><div class="dash-value" id="d_time">-</div></div>
+    <div class="dash-item"><div class="dash-label">屏幕</div><div class="dash-value" id="d_panel">-</div></div>
+    <div class="dash-item"><div class="dash-label">存储</div><div class="dash-value" id="d_storage">-</div></div>
+    <div class="dash-item"><div class="dash-label">电量</div><div class="dash-value" id="d_power">-</div></div>
+    <div class="dash-item"><div class="dash-label">天气</div><div class="dash-value" id="d_weather">-</div></div>
+    <div class="dash-item"><div class="dash-label">固件</div><div class="dash-value" id="d_fw">-</div></div>
+    <div class="dash-item"><div class="dash-label">内存</div><div class="dash-value" id="d_heap">-</div></div>
   </div>
 
   <div class="grid">
     <div class="stack-col">
-    <!-- Upload -->
-    <div class="card upload-card">
-      <div class="hd">
-        <div class="title" style="font-size:16px">上传图片</div>
-        <div class="sub">支持 JPEG / PNG / BMP，浏览器自动压缩后上传，设备缩放居中、抖动处理后刷新墨水屏。</div>
-      </div>
+    <div class="card">
+      <div class="hd"><div class="title">上传图片</div></div>
       <div class="bd">
-        <div class="upload-bar">
-          <input type="file" id="f" accept="image/jpeg,image/png,image/bmp">
+        <div class="actions" style="margin-top:0">
+          <input type="file" id="f" accept="image/jpeg,image/png,image/bmp" style="flex:1;max-width:none">
           <button class="btn" id="up" onclick="upload()">上传并显示</button>
         </div>
         <div class="preview-wrap" id="previewWrap" style="display:none">
@@ -435,24 +159,16 @@ body .epd-credit{width:100%;max-width:100%!important;margin-left:auto!important;
       </div>
     </div>
 
-    <!-- Gallery -->
-    <div class="card fullcard">
-      <div class="hd">
-        <div class="title" style="font-size:16px">画廊</div>
-        <div class="sub">已存储的图片，点击「显示」推送到墨水屏。</div>
-      </div>
+    <div class="card">
+      <div class="hd"><div class="title">画廊</div></div>
       <div class="bd">
         <div id="gallery" class="gallery"><div class="empty">加载中…</div></div>
       </div>
     </div>
     </div>
 
-    <!-- Status -->
     <div class="card status-card">
-      <div class="hd">
-        <div class="title" style="font-size:16px">设备状态</div>
-        <div class="sub">文件与存储空间</div>
-      </div>
+      <div class="hd"><div class="title">设备状态</div></div>
       <div class="bd">
         <div class="kv">
           <div class="k">upload.jpg</div><div class="v" id="u_sz">-</div>
@@ -463,37 +179,18 @@ body .epd-credit{width:100%;max-width:100%!important;margin-left:auto!important;
           <div class="k">天气</div><div class="v" id="wx_txt">-</div>
           <div class="k">设备时间</div><div class="v" id="dev_time">-</div>
         </div>
-        <div class="bar-wrap" title="用户文件区已用比例"><div class="bar-fill" id="sp_bar" style="width:0;background:var(--ok)"></div></div>
-        <div class="sub" id="sp_hint" style="margin-top:6px">进度条表示已用比例。</div>
-        <div style="height:12px"></div>
-        <div class="row">
+        <div class="bar-wrap" title="用户文件区已用比例"><div class="bar-fill" id="sp_bar" style="width:0"></div></div>
+        <div class="actions">
           <button class="btn ghost sm" onclick="refresh()">刷新状态</button>
           <button class="btn ghost sm" onclick="delFiles()">删除文件并清屏</button>
         </div>
-        <div class="sub" style="margin-top:10px">墨水屏断电保留画面，删除文件时会同时清屏。</div>
       </div>
     </div>
   </div>
 
-  <footer class="epd-credit" role="contentinfo">由 <strong>喵喵</strong> 设计并开发 · 智能墨水屏终端 · <a href="https://gitee.com/gxp666111/miaomiao" target="_blank" rel="noopener noreferrer">源码仓库</a></footer>
+  <footer class="epd-credit">MiaooAim  <a href="https://github.com/bluseliu50/MiaooAim_fork" target="_blank" rel="noopener">源码</a><br>forked by bluseliu50</footer>
 </div>
-
 <script>
-function setTheme(t){
-  document.documentElement.setAttribute('data-theme',t);
-  localStorage.setItem('epd_theme',t);
-  document.querySelectorAll('.tsw button').forEach(function(b){
-    b.classList.remove('on');
-    b.removeAttribute('aria-pressed');
-    b.blur();
-  });
-  document.querySelectorAll('.tsw button[data-t="'+t+'"]').forEach(function(b){
-    b.classList.add('on');
-    b.setAttribute('aria-pressed','true');
-  });
-}
-(function(){var t=localStorage.getItem('epd_theme')||'loopy';setTheme(t)})();
-
 function epdAuthHeaders(){
   try{
     var u=localStorage.getItem('epd_auth_u');
@@ -532,7 +229,6 @@ async function refresh(){
     document.getElementById('r_sz').textContent=j.raw_bytes>=0?fmt(j.raw_bytes):'未找到';
     if(j.spiffs_ok===false){
       document.getElementById('sp_txt').textContent='文件系统异常';
-      document.getElementById('sp_hint').textContent='请到设备配置页尝试重试或格式化文件区。';
       const bar=document.getElementById('sp_bar');
       bar.style.width='100%';
       bar.style.background='var(--er)';
@@ -542,14 +238,13 @@ async function refresh(){
       const free=Math.max(total-used,0);
       const pct=total>0?(used/total*100):0;
       document.getElementById('sp_txt').textContent='已用 '+fmtStorage(used)+'（'+pct.toFixed(1)+'%），剩余 '+fmtStorage(free)+' / 总 '+fmtStorage(total);
-      document.getElementById('sp_hint').textContent='进度条表示用户文件区已用比例，不是剩余空间。';
       const bar=document.getElementById('sp_bar');
       bar.style.width=Math.max(pct,3)+'%';
       bar.style.background=pct<70?'var(--ok)':pct<90?'var(--wn)':'var(--er)';
     }
-    document.getElementById('panel_txt').textContent=(j.panel_name||'-')+' · '+compactPanel(j)+(j.panel_has_yellow?' · 四色':(j.panel_has_red?' · 三色':' · 黑白'));
-    document.getElementById('fw_txt').textContent='v'+(j.version||'-')+' · '+(j.running||'-');
-    document.getElementById('wx_txt').textContent=weatherLabel(j)+(j.weather_city?' · '+j.weather_city:'');
+    document.getElementById('panel_txt').textContent=(j.panel_name||'-')+' '+compactPanel(j)+(j.panel_has_yellow?' 四色':(j.panel_has_red?' 三色':' 黑白'));
+    document.getElementById('fw_txt').textContent='v'+(j.version||'-')+' '+(j.running||'-');
+    document.getElementById('wx_txt').textContent=weatherLabel(j)+(j.weather_city?' '+j.weather_city:'');
     document.getElementById('dev_time').textContent=j.time_synced?j.time:'未同步';
     if(j.panel_width&&j.panel_height){
       epdPanelW=j.panel_width; epdPanelH=j.panel_height;
@@ -879,21 +574,21 @@ async function upload(){
   try{
     const blob=await buildUploadBlobFromPreview();
     log('压缩完成：'+fmt(file.size)+' → '+fmt(blob.size)+'，正在上传…');
-    log('⏳ 上传 + 图片转换 + 墨水屏刷新中，全程约 15-30 秒，请勿关闭页面…');
+    log('上传 + 图片转换 + 墨水屏刷新中，全程约 15-30 秒，请勿关闭页面…');
     const r=await fetch('/upload',epdFetchOpts({method:'POST',headers:{'Content-Type':'image/png'},body:blob}));
     const t=await r.text();
     await refresh(); await loadGallery();
-    log(r.ok?'✅ 上传成功！墨水屏已刷新':'❌ 上传失败：'+t,(r.ok?'ok':'bad'));
+    log(r.ok?'上传成功！墨水屏已刷新':'上传失败：'+t,(r.ok?'ok':'bad'));
   }catch(e){log('上传失败：'+e,'bad');}
   document.getElementById('up').disabled=false;
 }
 
 async function showImg(name){
-  log('⏳ 正在转换并显示 '+name+'，墨水屏刷新约需 15-20 秒…');
+  log('正在转换并显示 '+name+'，墨水屏刷新约需 15-20 秒…');
   try{
     const r=await fetch('/show?name='+encodeURIComponent(name),epdFetchOpts({method:'POST'}));
     const t=await r.text();
-    log(r.ok?'✅ 显示成功':'❌ '+t,(r.ok?'ok':'bad'));
+    log(r.ok?'显示成功':'失败：'+t,(r.ok?'ok':'bad'));
   }catch(e){log('显示失败：'+e,'bad');}
 }
 
@@ -1036,19 +731,19 @@ function updateDashboard(s){
   }
   document.getElementById('d_mode').textContent=s.current_mode_label||s.current_mode_name||'-';
   document.getElementById('d_panel').textContent=compactPanel(s);
-  document.getElementById('d_panel').title=(s.panel_name||'-')+(s.epd_ready?' · EPD ready':' · 初始化中');
+  document.getElementById('d_panel').title=(s.panel_name||'-')+(s.epd_ready?' EPD ready':' 初始化中');
   document.getElementById('d_power').textContent=s.battery_valid?(s.battery_pct+'%'):'--%';
-  document.getElementById('d_power').title=(s.charging?'充电中 · ':'')+fmtVolt(s.battery_mv)+' · ADC '+(s.battery_adc||0);
+  document.getElementById('d_power').title=(s.charging?'充电中 ':'')+fmtVolt(s.battery_mv)+' ADC '+(s.battery_adc||0);
   document.getElementById('d_weather').textContent=weatherLabel(s);
-  document.getElementById('d_weather').title=(s.weather_city||'')+(s.weather_update?' · 更新 '+s.weather_update:'');
+  document.getElementById('d_weather').title=(s.weather_city||'')+(s.weather_update?' 更新 '+s.weather_update:'');
   document.getElementById('d_fw').textContent='v'+(s.version||'-');
-  document.getElementById('d_fw').title=(s.idf||'')+' · '+(s.running||'');
+  document.getElementById('d_fw').title=(s.idf||'')+' '+(s.running||'');
   if(s.free_heap!=null){
     var hk=Math.round(s.free_heap/1024);
     var ik=s.internal_free!=null?Math.round(s.internal_free/1024):0;
     var pk=s.psram_free!=null?Math.round(s.psram_free/1024):0;
     document.getElementById('d_heap').textContent=hk+'K';
-    document.getElementById('d_heap').title='总空闲 '+hk+'KB · 内部 '+ik+'KB · PSRAM '+pk+'KB';
+    document.getElementById('d_heap').title='总空闲 '+hk+'KB 内部 '+ik+'KB PSRAM '+pk+'KB';
   }
 }
 (function(){

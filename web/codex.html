@@ -1,85 +1,49 @@
 <!doctype html>
-<html>
+<html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Codex 额度</title>
-<script>(function(){document.documentElement.setAttribute('data-theme',localStorage.getItem('epd_theme')||'loopy')})()</script>
-<style>
-[data-theme="loopy"]{--bg:#FFF0F5;--g1:rgba(255,182,203,.32);--g2:rgba(173,216,250,.28);--cd:#fff;--cb:rgba(255,155,179,.22);--ch:rgba(255,155,179,.10);--cs:0 6px 28px rgba(255,155,179,.13);--sf:rgba(255,236,245,.75);--sb:rgba(255,155,179,.20);--tx:#5A3050;--t2:rgba(120,70,100,.62);--ac:#FF9BB3;--a2:#8CC8F0;--ag:rgba(255,155,179,.28);--bt:#fff;--ok:#2E9E52;--er:#E53935;--wn:#E68A00;--hv:rgba(255,155,179,.10);--tg:rgba(255,155,179,.22)}
-[data-theme="kitty"]{--bg:#FFF8F8;--g1:rgba(255,77,109,.18);--g2:rgba(255,215,0,.14);--cd:#fff;--cb:rgba(255,77,109,.17);--ch:rgba(255,77,109,.07);--cs:0 6px 28px rgba(255,77,109,.10);--sf:rgba(255,245,247,.8);--sb:rgba(255,77,109,.14);--tx:#4A1525;--t2:rgba(130,50,70,.58);--ac:#FF4D6D;--a2:#FFB347;--ag:rgba(255,77,109,.24);--bt:#fff;--ok:#2E9E52;--er:#D32F2F;--wn:#E68A00;--hv:rgba(255,77,109,.07);--tg:rgba(255,77,109,.15)}
-[data-theme="lotso"]{--bg:#FBF0F3;--g1:rgba(183,70,120,.20);--g2:rgba(232,160,184,.18);--cd:#fff;--cb:rgba(183,70,120,.17);--ch:rgba(183,70,120,.07);--cs:0 6px 28px rgba(183,70,120,.10);--sf:rgba(251,238,244,.8);--sb:rgba(183,70,120,.14);--tx:#4A1428;--t2:rgba(120,40,70,.58);--ac:#B74678;--a2:#E8A0B8;--ag:rgba(183,70,120,.24);--bt:#fff;--ok:#2E9E52;--er:#C62828;--wn:#E68A00;--hv:rgba(183,70,120,.07);--tg:rgba(183,70,120,.15)}
-*{box-sizing:border-box;transition:background-color .35s,border-color .35s,color .3s,box-shadow .35s}
-body{margin:0;font-family:'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;background:radial-gradient(1200px 800px at 20% -10%,var(--g1),transparent 60%),radial-gradient(900px 600px at 100% 0%,var(--g2),transparent 55%),var(--bg);color:var(--tx);min-height:100vh}
-.wrap{max-width:760px;margin:0 auto;padding:20px 16px}.hdr{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap}.title{font-weight:800;letter-spacing:.2px;font-size:20px}.sub{color:var(--t2);font-size:13px;line-height:1.5}.nav{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}.nav a{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:12px;font-size:13px;font-weight:700;color:var(--tx);background:var(--cd);border:1px solid var(--cb);text-decoration:none;transition:all .2s;white-space:nowrap}.nav a:hover{border-color:var(--ac);background:var(--hv);transform:translateY(-1px)}.nav a.active{border-color:var(--ac);color:var(--ac);background:var(--hv);box-shadow:0 2px 8px var(--ag)}.nav .ni{font-size:15px}.card{position:relative;background:var(--cd);border:1px solid var(--cb);border-radius:18px;overflow:hidden;box-shadow:var(--cs);margin-bottom:16px}.card .hd{padding:16px 16px 10px;background:linear-gradient(180deg,var(--ch),transparent)}.card .bd{padding:16px}.kv{display:grid;grid-template-columns:110px 1fr;gap:8px 12px;font-size:13px;margin-bottom:12px}.k{color:var(--t2)}.v{font-weight:700}.ok{color:var(--ok)}.bad{color:var(--er)}.warn{color:var(--wn)}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.form-row{margin-bottom:12px}.form-row label{display:block;font-size:12px;color:var(--t2);margin-bottom:4px}.btn{cursor:pointer;border:0;border-radius:12px;padding:10px 14px;font-weight:700;font-size:13px;color:var(--bt);background:linear-gradient(135deg,var(--ac),var(--a2));box-shadow:0 6px 20px var(--ag);transition:filter .2s,transform .15s}.btn:hover{filter:brightness(1.06);transform:translateY(-1px)}.btn.ghost{background:var(--sf);color:var(--tx);border:1px solid var(--cb);box-shadow:none}.btn.ghost:hover{background:var(--hv);border-color:var(--ac)}.btn.sm{padding:6px 10px;font-size:12px;border-radius:8px}.btn:disabled{opacity:.55;cursor:not-allowed;transform:none;filter:none}.log{margin-top:10px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;background:var(--sf);border:1px solid var(--sb);border-radius:12px;padding:10px;min-height:48px;white-space:pre-wrap}select,input[type=text],input[type=password],input[type=number],textarea{padding:10px 12px;background:var(--sf);border:1px solid var(--sb);color:var(--tx);border-radius:12px;font-size:14px;width:100%;max-width:380px;font-family:inherit}textarea{max-width:100%}select:focus,input:focus,textarea:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3px var(--ag)}.toggle{position:relative;display:inline-block;width:44px;height:24px;vertical-align:middle}.toggle input{opacity:0;width:0;height:0;position:absolute}.toggle .sl{position:absolute;cursor:pointer;inset:0;background:var(--tg);border-radius:24px;transition:.3s}.toggle .sl:before{content:"";position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:var(--cd);border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.15)}.toggle input:checked+.sl{background:var(--ac)}.toggle input:checked+.sl:before{transform:translateX(20px)}.epd-credit{margin-top:20px;padding-top:14px;border-top:1px solid var(--cb);font-size:12px;color:var(--t2);text-align:center;line-height:1.6}.epd-credit strong{color:var(--tx);font-weight:700}.epd-credit a{color:var(--ac);font-weight:600;text-decoration:none}.epd-credit a:hover{text-decoration:underline}
-@media(max-width:520px){.wrap{padding:16px 12px}.kv{grid-template-columns:92px 1fr}.nav a{padding:8px 10px;font-size:12px}}
-/* Unified page navigation */
-.nav{width:min(1180px,calc(100vw - 32px));display:flex;align-items:center;gap:8px;margin:0 0 18px 50%;padding:8px;overflow-x:auto;flex-wrap:nowrap;border-radius:18px;background:rgba(255,255,255,.60);border:1px solid var(--cb);box-shadow:0 8px 22px rgba(255,155,179,.10);scrollbar-width:none;-webkit-overflow-scrolling:touch;transform:translateX(-50%)}
-.nav::-webkit-scrollbar{display:none}
-.nav a{flex:0 0 auto;min-height:38px;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:0 13px;border-radius:12px;font-size:13px;font-weight:800;line-height:1;color:var(--tx);background:rgba(255,255,255,.78);border:1px solid var(--cb);text-decoration:none;white-space:nowrap;box-shadow:0 4px 12px rgba(255,155,179,.08)}
-.nav .ni{width:18px;min-width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:15px;line-height:1}
-.nav a:hover,.nav a.active{color:var(--ac);border-color:var(--ac);background:var(--hv);transform:translateY(-1px);box-shadow:0 0 0 2px var(--ag)}
-@media(max-width:640px){.nav{width:calc(100vw - 24px);padding:7px;gap:7px;border-radius:16px}.nav a{min-height:36px;padding:0 11px;font-size:12px}}
-</style>
-<style id="unified-shell-v2">
-/* Unified app shell v2: keep page size, nav, cards and form rhythm consistent. */
-body{overflow-y:scroll}
-body .wrap{width:min(1180px,calc(100vw - 32px));max-width:1180px!important;margin:0 auto!important;padding:24px 0 36px!important}
-body.page-upload .wrap{width:min(1180px,calc(100vw - 32px));max-width:1180px!important}
-body.page-config .wrap,body.page-board .wrap{width:min(1380px,calc(100vw - 36px));max-width:1380px!important}
-body.page-config .page{width:min(1180px,calc(100vw - 32px))!important;max-width:1180px!important;margin:24px auto 36px!important}
-body.page-board{overflow:hidden}
-body .hdr{width:100%;min-height:46px;margin:0 0 16px!important;align-items:center}
-body .hdr .title{line-height:1.25}
-body .nav{width:min(1180px,100%)!important;max-width:100%!important;margin:0 auto 20px!important;transform:none!important;justify-content:center!important}
-body .nav a{flex:0 0 88px!important;width:88px!important;min-width:88px!important;max-width:88px!important;padding:0 6px!important;gap:5px!important;overflow:hidden!important}
-body .card{border-radius:16px!important}
-body.page-panel .card,body.page-task .card{width:100%;margin-left:auto!important;margin-right:auto!important}
-body.page-panel .wrap>.row,body.page-panel .wrap>.log,body.page-task .wrap>.row,body.page-task .wrap>.log{width:100%;margin-left:auto!important;margin-right:auto!important}
-body.page-panel .card .hd,body.page-task .card .hd{padding:20px 22px 12px!important}
-body.page-panel .card .bd,body.page-task .card .bd{padding:18px 22px 22px!important}
-body.page-panel .card .bd{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px;align-items:start}
-body.page-panel .card .bd>.kv,body.page-panel .card .bd>.row,body.page-panel .card .bd>.log{grid-column:1/-1}
-body.page-panel .card .bd>.form-row{margin-bottom:0!important}
-body.page-panel select,body.page-panel input[type=text],body.page-panel input[type=password],body.page-panel input[type=number],body.page-panel textarea{max-width:none!important}
-body.page-panel #cityResults{max-width:none!important}
-body.page-task .wrap>.row{margin-top:16px}
-body.page-upload .card,body.page-config .card{width:100%}
-body.page-gallery .card,body.page-timetable .card{width:100%;margin-left:auto!important;margin-right:auto!important}
-body.page-gallery .wrap>.row,body.page-gallery .wrap>.log,body.page-timetable .wrap>.row,body.page-timetable .wrap>.log{width:100%;margin-left:auto!important;margin-right:auto!important}
-body .epd-credit{width:100%;max-width:100%!important;margin-left:auto!important;margin-right:auto!important}
-@media(max-width:760px){body .wrap,body.page-upload .wrap{width:calc(100vw - 24px);padding:16px 0 28px!important}body.page-config .page{width:calc(100vw - 24px)!important;margin-top:16px!important}body.page-panel .card .bd{grid-template-columns:1fr}body .nav{margin-bottom:16px!important;justify-content:flex-start!important}}
-</style>
+<title>Codex 额度 — 喵喵墨水屏</title>
+<link rel="stylesheet" href="/app.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0">
 </head>
-<body class="page-shell page-panel page-codex">
+<body class="codex">
 <div class="wrap">
-  <div class="hdr"><div class="title">Codex 额度</div></div>
-  <!-- Navigation -->
-  <div class="nav">
-    <a href="/"><span class="ni">🖼</span> 上传</a>
-    <a href="/gallery"><span class="ni">🔁</span> 轮播</a>
-    <a href="/weather"><span class="ni">🌤</span> 天气</a>
-    <a href="/clock"><span class="ni">🕐</span> 时钟</a>
-    <a href="/calendar"><span class="ni">🗓</span> 日历</a>
-    <a href="/timetable"><span class="ni">📅</span> 课程表</a>
-    <a href="/todo"><span class="ni">✅</span> 待办</a>
-    <a href="/countdown"><span class="ni">⏳</span> 倒计时</a>
-    <a href="/message"><span class="ni">💬</span> 文字留言</a>
-    <a href="/board"><span class="ni">🎨</span> 画布留言</a>
-    <a href="/codex" class="active"><span class="ni">📊</span> 额度</a>
-    <a href="/config"><span class="ni">⚙</span> 设备配置</a>
+  <div class="hdr"><div><div class="title">Codex 额度</div></div></div>
+  <nav class="nav">
+    <a href="/"><span class="msym sm">upload</span>上传</a>
+    <a href="/gallery"><span class="msym sm">view_carousel</span>轮播</a>
+    <a href="/weather"><span class="msym sm">cloud</span>天气</a>
+    <a href="/clock"><span class="msym sm">schedule</span>时钟</a>
+    <a href="/calendar"><span class="msym sm">calendar_month</span>日历</a>
+    <a href="/timetable"><span class="msym sm">grid_on</span>课表</a>
+    <a href="/todo"><span class="msym sm">check_box</span>待办</a>
+    <a href="/countdown"><span class="msym sm">timer</span>倒计时</a>
+    <a href="/message"><span class="msym sm">subject</span>文字</a>
+    <a href="/board"><span class="msym sm">draw</span>画布</a>
+    <a href="/codex" class="active"><span class="msym sm">monitoring</span>额度</a>
+    <a href="/config"><span class="msym sm">settings</span>配置</a>
+  </nav>
+  <div class="card">
+    <div class="hd"><div class="title">Codex 额度</div></div>
+    <div class="bd">
+      <div class="kv"><div class="k">额度状态</div><div class="v" id="cq_status">-</div><div class="k">最新数据</div><div class="v" id="cq_data">-</div></div>
+      <div class="form-row"><label>启用额度页</label>
+        <label class="inline"><span class="toggle"><input type="checkbox" id="cqEnabled"><span class="sl"></span></span><span id="cqLabel">已关闭</span></label>
+      </div>
+      <div class="field-group"><label>额度 API URL</label><input type="text" id="cqApiUrl" placeholder="https://dash.classicriver.cn/v1/usage"></div>
+      <div class="field-group"><label>API Key</label><input type="password" id="cqApiKey" placeholder="sk-..."></div>
+      <div class="field-group"><label>显示单位</label><input type="text" id="cqUnit" placeholder="USD / 元 / credits"></div>
+      <div class="field-group"><label>自动刷新</label><select id="cqRefresh"><option value="0">仅手动刷新</option><option value="5">自动：每 5 分钟</option><option value="15">自动：每 15 分钟</option><option value="30">自动：每 30 分钟</option></select></div>
+      <div class="actions">
+        <button class="btn" onclick="saveCodexQuota()">保存设置</button>
+        <button class="btn ghost sm" onclick="showCodexQuota()">立即显示</button>
+        <button class="btn ghost sm" onclick="loadCodexQuota()">刷新</button>
+      </div>
+      <div class="log" id="cqLog">加载中…</div>
+    </div>
   </div>
-
-  <div class="card"><div class="hd"><div class="title" style="font-size:16px">Codex 额度</div><div class="sub">通过中转站额度接口获取余额/用量，并在墨水屏上显示。</div></div><div class="bd">
-    <div class="kv"><div class="k">额度状态</div><div class="v" id="cq_status">-</div><div class="k">最新数据</div><div class="v" id="cq_data">-</div></div>
-    <div class="form-row"><label>启用额度页</label><label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-top:4px"><span class="toggle"><input type="checkbox" id="cqEnabled"><span class="sl"></span></span><span id="cqLabel" style="font-size:13px">已关闭</span></label></div>
-    <div class="form-row"><label>额度 API URL</label><input type="text" id="cqApiUrl" placeholder="https://dash.classicriver.cn/v1/usage"></div>
-    <div class="form-row"><label>API Key</label><input type="password" id="cqApiKey" placeholder="sk-..."></div>
-    <div class="form-row"><label>显示单位</label><input type="text" id="cqUnit" placeholder="USD / 元 / credits"></div>
-    <div class="form-row"><label>自动刷新</label><select id="cqRefresh"><option value="0">仅手动刷新</option><option value="5">自动：每 5 分钟</option><option value="15">自动：每 15 分钟</option><option value="30">自动：每 30 分钟</option></select></div>
-    <div class="row"><button class="btn" onclick="saveCodexQuota()">保存设置</button><button class="btn ghost sm" onclick="showCodexQuota()">立即显示额度</button><button class="btn ghost sm" onclick="loadCodexQuota()">刷新</button></div><div class="log" id="cqLog">加载中…</div>
-  </div></div>
-  <footer class="epd-credit" role="contentinfo">由 <strong>喵喵</strong> 设计并开发 · 智能墨水屏终端 · <a href="https://gitee.com/gxp666111/miaomiao" target="_blank" rel="noopener noreferrer">源码仓库</a></footer>
+  <footer class="epd-credit">MiaooAim  <a href="https://github.com/bluseliu50/MiaooAim_fork" target="_blank" rel="noopener">源码</a><br>forked by bluseliu50</footer>
 </div>
 <script>
 function epdAuthHeaders(){try{var u=localStorage.getItem('epd_auth_u');var p=localStorage.getItem('epd_auth_p');if(u!=null&&p!=null&&u!==''&&p!=='')return {'Authorization':'Basic '+btoa(unescape(encodeURIComponent(u+':'+p)))};}catch(e){}return {};}
