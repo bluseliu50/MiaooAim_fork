@@ -50,16 +50,40 @@ Routes registered in `main/http_app.c` (~63 method+path combos). HTML pages are 
 | `main/font_ext.c`, `main/font_data.h` | Font engine + embedded ASCII/CJK bitmaps. |
 | `main/lodepng.c` | Vendored PNG decoder (encoder/disk/ancillary compiled out). |
 | `web/` | Web UI HTML (embedded into firmware at build via `EMBED_FILES`). |
-| `tools/` | Python font-gen scripts (`gen_font.py`, `gen_ext_font.py`, `fetch_open_fonts.py`), BOM/city helpers. |
+| `tools/` | Python font-gen scripts (`gen_font.py`, `gen_ext_font.py`, `fetch_open_fonts.py`), BOM/city helpers, `detect_port.sh` (macOS/Linux serial auto-detect for Makefile). |
 | `spiffs_image/fonts/` | Generated font assets (`.mef`) — built, gitignored. |
-| `test/lunar/` | Host-side Unity unit tests for `main/lunar.c`. |
+| `test/lunar/` | Host-side Unity unit tests for `main/lunar.c` (ESP-IDF Linux target path, needs `idf.py`). |
+| `test/host/` | **ESP-IDF-free** host test runner for `main/lunar.c` (pure `cc`, ships `unity.h`/`sdkconfig.h` shims; `make test-host`). |
 | `hardware/` | BOM notes, wiring diagram. |
 | `release/` | Pre-built flashing bundle (`epaper_uploader_full_16MB.bin`). |
 | `docs/` | README images, font notes, Gitee about text. |
+| `Makefile` | macOS/Linux build wrapper around `idf.py` with serial-port auto-detect (`make help`). |
+| `pyproject.toml` | Python tooling manifest for uv (font/city-code scripts + host test helpers; `uv sync --group dev`). |
 
 ## Development Commands
 
-**Runtime/Toolchain constraints:** ESP-IDF **≥ v5.5.1** (5.5.x series). Target is **`esp32s3` only** — `main/CMakeLists.txt` hard-fails on any other target. No Bun/Node/package manager; this is pure C + ESP-IDF CMake + Python tooling.
+**Runtime/Toolchain constraints:** ESP-IDF **≥ v5.5.1** (5.5.x series). Target is **`esp32s3` only** — `main/CMakeLists.txt` hard-fails on any other target. Firmware cross-compile needs ESP-IDF (C + CMake + toolchain). Python dev tools (font/city-code gen) and the **ESP-IDF-free host tests** are managed by **[uv](https://docs.astral.sh/uv/)** via `pyproject.toml` (`uv sync --group dev`) — no global Python pollution, no ESP-IDF required for tooling/tests.
+
+**macOS / Linux (Makefile wrapper, recommended):** the repo-root `Makefile` wraps `idf.py` and auto-detects the serial port via `tools/detect_port.sh` (macOS `/dev/cu.*`, Linux `/dev/ttyACM*` / `/dev/ttyUSB*`). Requires ESP-IDF v5.5.1+ activated (`. ~/esp/esp-idf/export.sh`).
+
+```bash
+make setup            # first-time target config (esp32s3), once
+make fm               # build + flash + monitor (most common; auto-detects port)
+make build            # build only
+make flash            # flash only
+make monitor          # serial monitor
+make test             # host-side unit tests (ESP-IDF-free, test/host)
+make menuconfig       # config menu
+make clean            # clean build artifacts (keeps sdkconfig/target)
+make fullclean        # deep clean (deletes build/ + sdkconfig; re-run make setup)
+make help             # list all targets
+
+# override port/baud explicitly when auto-detect fails:
+make fm PORT=/dev/ttyUSB0 BAUD=921600
+```
+
+
+**Windows / raw `idf.py` (all platforms):**
 
 ```powershell
 # First-time setup (once)
@@ -79,14 +103,24 @@ idf.py -p COMx build flash monitor
 idf.py -p COMx erase-flash
 ```
 
-Build auto-generates fonts: `CMakeLists.txt` runs `tools/fetch_open_fonts.py` (downloads OFL LXGW fonts) then `tools/gen_ext_font.py` for 16/24/32px CJK, producing `spiffs_image/fonts/*.mef`, which is packed into the `fontfs` SPIFFS partition and flashed with the app.
-
-**Host-side unit tests** (no hardware needed):
+**Host-side unit tests** — two paths:
+- **ESP-IDF-free (preferred for quick checks):** `make test-host` compiles `main/lunar.c` directly with the system `cc` via `test/host/` (ships minimal `unity.h` + `sdkconfig.h` shims, reuses `test/lunar/main/test_lunar.c` cases). No ESP-IDF, no hardware.
+- **ESP-IDF Linux target (full Unity):** via `idf.py --preview set-target linux` (needs ESP-IDF):
 ```powershell
 cd test/lunar
 idf.py --preview set-target linux
 idf.py build
 ./build/lunar_unit_test.elf   # Linux/macOS ; .\build\lunar_unit_test.elf on Windows (MinGW)
+```
+
+**Python dev tools (uv-managed, ESP-IDF-free):** font generation and city-code export run in a uv venv — no ESP-IDF, no global Python.
+```bash
+uv sync --group dev                          # create .venv + install Pillow/openpyxl (once)
+uv run python tools/gen_ext_font.py --help   # any tool runs via `uv run`
+make tools                                   # alias: uv sync --group dev
+make tools-fonts                             # regenerate cjk16/24/32.mef (needs OFL fonts)
+make tools-city                              # export QWeather city codes to Excel
+make ruff-check 2>/dev/null || uv run ruff check tools/   # optional lint
 ```
 
 ## Code Conventions & Common Patterns
@@ -109,6 +143,11 @@ idf.py build
 | `main/CMakeLists.txt` | Source list, `EMBED_FILES` (web HTML), compile flags, target guard. |
 | `main/idf_component.yml` | IDF component manifest (`espressif/mdns`, IDF `>=5.5.1`). |
 | `CMakeLists.txt` (root) | Font generation custom commands, SPIFFS image, version. |
+| `Makefile` | macOS/Linux build wrapper around `idf.py` (setup/build/flash/monitor/fm/test/test-host/clean/fullclean) + uv tool targets (`tools`/`tools-fonts`/`tools-city`). |
+| `tools/detect_port.sh` | Serial-port auto-detect script used by the Makefile (macOS `/dev/cu.*`, Linux `/dev/ttyACM*`/`/dev/ttyUSB*`). |
+| `pyproject.toml` | Python tooling manifest for uv — dev deps (Pillow, openpyxl), ruff config. `uv sync --group dev` installs. |
+| `uv.lock` | Locked Python tool deps for reproducible builds (committed). |
+| `test/host/` | ESP-IDF-free host test runner (`unity.h`/`sdkconfig.h` shims + driver); `make test-host`. |
 | `partitions.csv` | 16MB partition layout (factory + ota_0/ota_1 3MB each + coredump + fontfs + spiffs). |
 | `sdkconfig.defaults` | Project defaults: esp32s3, `-Os`, PSRAM octal 80MHz, coredump-to-flash, HTTPS CA bundle (CMN), lwIP tuning. |
 | `main/epd.h` | Panel enum + EPD API (`epd_init`, `epd_display_*`, panel config). |

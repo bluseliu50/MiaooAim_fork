@@ -2,6 +2,23 @@
 
 本文记录公开仓库中对用户和复刻者有影响的主要变化。
 
+
+## 2026-06-22
+
+### 新增
+
+- 新增 macOS / Linux 跨平台 `Makefile`：封装 `idf.py`，提供 `setup` / `build` / `flash` / `monitor` / `fm` / `test` / `test-host` / `tools` / `tools-fonts` / `tools-city` / `clean` / `fullclean` 等目标，通过 `tools/detect_port.sh` 自动探测串口（macOS `/dev/cu.*`、Linux `/dev/ttyUSB*` / `/dev/ttyACM*`），`make help` 查看全部目标。Windows 用户仍使用 `idf.py` 原生命令。
+- 新增 `test/lunar/Makefile` 与 `test/host/Makefile`：`make test`（默认走 ESP-IDF-free 的 `test/host`）一条命令完成主机端单元测试编译与运行。
+- 新增 **ESP-IDF-free 开发工具链**：Python 开发工具（字库生成、城市码导出）与主机单元测试不再依赖 ESP-IDF。
+  - 新增 `pyproject.toml`（uv 项目声明）与 `uv.lock`（依赖版本锁定），使用 [uv](https://docs.astral.sh/uv/) 管理虚拟环境：`uv sync --group dev` 安装 Pillow / openpyxl，`.venv/` 已被 `.gitignore` 忽略。
+  - 新增 `test/host/`（ESP-IDF-free 主机测试）：自带最小 `unity.h` / `sdkconfig.h` 兼容层，用系统 `cc` 直接编译纯 C 的 `main/lunar.c`，复用 `test/lunar/main/test_lunar.c` 全部用例，`make test-host` 运行。
+  - `Makefile` 新增 `tools` / `tools-fonts` / `tools-city` 目标，封装 `uv run` 调用字库与城市码工具。
+  - 固件编译 / 烧录仍需 ESP-IDF v5.5.1+；文档已明确区分两类任务的依赖边界。
+
+### 文档
+
+- README、AGENTS、CONTRIBUTING、test/README 同步补充 macOS / Linux 构建说明、Makefile 用法，以及基于 uv 的 ESP-IDF-free 开发工具链说明。
+
 ## 2026-06-04
 
 ### 新增

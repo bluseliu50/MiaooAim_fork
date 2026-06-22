@@ -9,7 +9,7 @@
 
 > 一款基于 ESP32-S3 的低功耗三色墨水屏智能终端，支持图片展示、天气、时钟、日历、课程表、待办等功能，通过 Web 界面管理，开箱即用。  
 > **发布版本：v2.3.3**（与根目录 `CMakeLists.txt` 中 `PROJECT_VER` 一致；烧录后请以串口 `App version` 或 `GET /version` 的 JSON 字段 `version` 为准）。文档导航见 [文档索引.md](文档索引.md)。
-> **构建环境**：**ESP-IDF 最低要求 v5.5.1**；同大版本内更高发行版（如 5.5.4）一般可直接使用，若遇兼容问题以 5.5.1 为对照。
+> **构建环境**：**ESP-IDF 最低要求 v5.5.1**；同大版本内更高发行版（如 5.5.4）一般可直接使用，若遇兼容问题以 5.5.1 为对照。macOS / Linux 用户可使用仓库根目录的 `Makefile`（`make help`）一键编译烧录，Windows 用户使用 `idf.py`。
 
 ## 🔗 项目入口
 
@@ -198,6 +198,39 @@ git clone https://gitee.com/gxp666111/miaomiao.git
 cd miaomiao   # 或你本地的 msp 目录名
 ```
 
+### 2.5 开发环境（可选）
+
+本仓库涉及两类开发任务，依赖不同：
+
+| 任务 | 是否需要 ESP-IDF | 说明 |
+|------|:---:|------|
+| **固件编译 / 烧录** | ✅ 需要 | ESP-IDF v5.5.1+（C 交叉编译、CMake、工具链）。macOS/Linux 用 `Makefile`，Windows 用 `idf.py` |
+| **字库生成 / 城市码导出 / 主机单元测试** | ❌ 不需要 | 纯 Python 工具 + 纯 C 测试，用 [uv](https://docs.astral.sh/uv/) 管理虚拟环境即可 |
+
+**脱离 ESP-IDF 的开发工具（推荐用 uv）：**
+
+```bash
+# 安装 uv（macOS/Linux，一次性）
+curl -LsSf https://astral.sh/uv/install.sh | sh
+# Windows: powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# 在仓库根目录创建虚拟环境并安装工具依赖（Pillow / openpyxl）
+uv sync --group dev
+
+# 字库生成（需要先下载 OFL 字体，见 tools/fetch_open_fonts.py）
+make tools-fonts
+# 或手动：uv run python tools/gen_ext_font.py --size 32 --out ... --set gb2312 ...
+
+# 城市码 Excel 导出
+make tools-city
+# 或手动：uv run python tools/gen_city_excel.py
+
+# 主机端单元测试（纯 C，无需 ESP-IDF / 无需硬件）
+make test-host
+```
+
+> `uv sync` 会在仓库根目录创建 `.venv/`（已被 `.gitignore` 忽略），并用 `uv.lock` 锁定工具依赖版本以保证可复现。固件编译烧录仍需 ESP-IDF，见下方第 4 节。
+
 ### 3. 免编译一键烧录
 
 如果只是想把固件烧进设备，不需要安装 ESP-IDF，也不需要自己编译。仓库已提供整包固件。
@@ -236,6 +269,33 @@ BAUD: 115200 或 460800
 ### 4. 开发者编译与烧录
 
 本项目目标芯片固定为 **ESP32-S3**。仓库已在 `CMakeLists.txt` 和 `.vscode/settings.json` 中写入默认目标；如果你是从 Gitee 源码 ZIP 解压后首次用 VSCode 打开，建议先执行一次“干净配置”，避免旧目录残留的 `build/CMakeCache.txt`、`sdkconfig` 或 VSCode 缓存继续按普通 ESP32 编译。
+
+#### macOS / Linux（Makefile 封装，推荐）
+
+仓库根目录提供跨平台 `Makefile`，封装了 `idf.py` 并**自动探测串口**（macOS 的 `/dev/cu.*` 与 Linux 的 `/dev/ttyACM*` / `/dev/ttyUSB*`），省去手敲串口号。**前置条件**：已安装并激活 ESP-IDF v5.5.1+（`. ~/esp/esp-idf/export.sh`）。
+
+```bash
+# 首次：配置目标芯片（只需一次）
+make setup
+
+# 编译 + 烧录 + 串口监视（最常用，自动探测串口）
+make fm
+
+# 单独编译 / 烧录 / 监视
+make build
+make flash
+make monitor
+
+# 手动指定串口与波特率
+make fm PORT=/dev/ttyUSB0 BAUD=921600
+
+# 主机端单元测试（无需硬件，也无需 ESP-IDF）
+make test
+```
+
+> 查看全部目标：`make help`。`Makefile` 通过 `tools/detect_port.sh` 自动探测串口；若未识别到设备，用 `PORT=/dev/...` 显式指定。本 `Makefile` 仅面向 macOS / Linux；Windows 用户请使用下文的 `idf.py` 命令。
+
+#### Windows / 通用 idf.py 命令
 
 ```powershell
 # 首次配置目标芯片，只需要执行一次
@@ -339,7 +399,8 @@ msp/
 │   ├── gen_city_excel.py        # 和风天气城市码导出
 │   ├── font_extra_chars.txt     # 字库补字清单
 │   ├── unifont.hex.gz           # 字库生成输入
-│   └── update_gitee_about.ps1   # Gitee 仓库简介同步脚本
+│   ├── update_gitee_about.ps1   # Gitee 仓库简介同步脚本
+│   └── detect_port.sh           # macOS/Linux 串口自动探测（供 Makefile 使用）
 ├── hardware/                    # 硬件提要（采购清单暂不公开）
 │   ├── 开发板接线图.png           # 开发板 / 屏 / 按键 / 电源接线示意
 │   ├── BOM_ACTUAL.md            # 与固件兼容性提要
@@ -353,7 +414,10 @@ msp/
 │   └── epaper_uploader_full_16MB.zip
 ├── partitions.csv               # 分区表（3MB app 三槽 + coredump + fontfs + 用户 SPIFFS）
 ├── sdkconfig.defaults           # 项目默认配置
-└── CMakeLists.txt               # 顶层构建脚本
+├── CMakeLists.txt               # 顶层构建脚本
+├── Makefile                     # macOS / Linux 构建 + 工具脚本（封装 idf.py / uv）
+├── pyproject.toml               # Python 工具依赖声明（uv 管理，脱离 ESP-IDF）
+├── uv.lock                      # uv 工具依赖版本锁定（保证可复现）
 ```
 
 ## 🔌 分区表

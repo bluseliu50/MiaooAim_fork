@@ -3,22 +3,50 @@
 本目录存放**主机端单元测试**，用于在不烧录真机的前提下，对固件中**纯逻辑模块**做回归验证。
 测试只新增代码，**不修改 `main/` 下任何现有实现逻辑**。
 
-测试运行在 **ESP-IDF Linux 主机目标** 上，使用 ESP-IDF 自带的 **Unity** 框架。
+测试提供**两条运行路径**：
 
-## 目录结构
+- **`test/host/`（推荐，无需 ESP-IDF）：** 用系统 `cc` 直接编译纯 C 模块，自带最小 `unity.h` / `sdkconfig.h` 兼容层，复用 `test/lunar/main/test_lunar.c` 的全部用例。`make test-host` 一条命令运行。
+- **`test/lunar/`（完整 Unity，需 ESP-IDF）：** 在 ESP-IDF Linux 主机目标上用 ESP-IDF 自带的 Unity 框架编译运行，适合需要完整 Unity 输出格式的场景。
 
 ```
 test/
-└── lunar/                  # 针对 main/lunar.c（农历算法）的测试工程
+├── host/                   # ESP-IDF-free 主机测试（推荐，纯 cc 编译）
+│   ├── Makefile            # 构建运行脚本（make run / clean）
+│   ├── unity.h             # 最小 Unity 兼容层（仅覆盖 lunar 测试用到的宏）
+│   ├── sdkconfig.h         # 最小 sdkconfig 存根（启用 CONFIG_IDF_TARGET_LINUX 路径）
+│   └── test_lunar_host.c   # 驱动：引入兼容层 + #include 既有 test_lunar.c + 提供 main()
+└── lunar/                  # ESP-IDF Linux 主机目标测试工程（完整 Unity）
     ├── CMakeLists.txt       # 顶层 IDF 工程
+    ├── Makefile             # macOS/Linux 快捷封装（run / clean）
     └── main/
         ├── CMakeLists.txt   # 编译 main/lunar.c + 测试用例，依赖 unity 组件
-        └── test_lunar.c     # Unity 测试用例 + 运行入口
-```
+        └── test_lunar.c     # Unity 测试用例 + 运行入口（host/ 与 lunar/ 共用）
 
 ## 运行方法
 
-在**已激活 ESP-IDF 环境**的终端里执行（需要 ESP-IDF v5.5.1+）：
+### 方式一：ESP-IDF-free（推荐，`test/host/`）
+
+纯 C 编译，**无需安装/激活 ESP-IDF**，只需系统自带 C 编译器（macOS/Linux 的 `cc`/`clang`/`gcc`）：
+
+```bash
+# 在仓库根目录执行
+make test-host          # 编译并运行（make test 的默认目标）
+# 或单独：make -C test/host run
+# 清理：make -C test/host clean
+```
+
+测试通过返回码为 `0`，失败为 `1`，可直接接入 CI。
+
+### 方式二：ESP-IDF Linux 主机目标（`test/lunar/`，完整 Unity）
+
+在**已激活 ESP-IDF 环境**的终端里执行（需要 ESP-IDF v5.5.1+）。仓库根目录 `Makefile` 也提供了快捷方式：
+
+```bash
+# macOS / Linux 快捷方式（等价于下方完整流程）
+make -C test/lunar run
+```
+
+**完整命令**（全平台）：
 
 ```powershell
 cd test/lunar

@@ -1,0 +1,70 @@
+# =============================================================================
+# Python 项目定义（uv 管理）
+#
+# 本固件本身是纯 C + ESP-IDF CMake 工程，无需 Python 运行时。
+# 这个 pyproject.toml 只为**开发辅助工具**提供依赖管理与虚拟环境：
+#   - 字库生成工具（tools/gen_ext_font.py、gen_font.py、preview_ext_font.py）→ Pillow
+#   - 城市码导出工具（tools/gen_city_excel.py）→ openpyxl
+#   - 字体下载（tools/fetch_open_fonts.py）→ 仅标准库
+#
+# 用法（macOS / Linux / Windows 均可，无需 ESP-IDF）：
+#   uv sync                 # 创建 .venv 并安装 dev 依赖
+#   uv run python tools/gen_ext_font.py --help
+#   uv run make test-host   # 无需 ESP-IDF 运行主机单元测试
+#
+# 固件编译 / 烧录仍需要 ESP-IDF v5.5.1+（见 README / Makefile）。
+# =============================================================================
+
+[project]
+name = "miaooaim-tools"
+version = "2.3.3"
+description = "Dev tooling (font/city-code generation, host unit tests) for the MiaooAim ESP32-S3 e-paper firmware. The firmware itself is pure C + ESP-IDF."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "PolyForm Noncommercial" }
+authors = [{ name = "MiaooAim contributors" }]
+dependencies = []
+
+[project.optional-dependencies]
+# 字库生成（Pillow 渲染 TrueType → 点阵）
+fonts = [
+    "pillow>=10.0.0",
+]
+# 和风天气城市码 Excel 导出
+city = [
+    "openpyxl>=3.1.0",
+]
+# 一键安装全部开发依赖（推荐）
+dev = [
+    "pillow>=10.0.0",
+    "openpyxl>=3.1.0",
+]
+
+[tool.uv]
+# 默认安装 dev 全量依赖，方便新贡献者开箱即用
+default-groups = []
+
+[dependency-groups]
+dev = [
+    "pillow>=10.0.0",
+    "openpyxl>=3.1.0",
+]
+
+# -----------------------------------------------------------------------------
+# Ruff：轻量 lint / 格式化（可选，`uv run ruff check tools/`）
+# -----------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+extend-exclude = [
+    "main/lodepng.c",
+    "build/",
+    "managed_components/",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]  # 行宽交给 formatter
+
+[tool.ruff.format]
+quote-style = "preserve"

@@ -26,7 +26,30 @@ Thumbs.db
 
 # Python
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+.eggs/
+dist/
+develop-eggs/
+sdist/
+wheels/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.cover
+
+# Virtual environments (managed by uv / venv)
+.venv/
+venv/
+env/
+.env/
+
+# uv lockfile: committed for reproducible tool deps. Uncomment to ignore.
+#!uv.lock
 
 # Temporary / Debug
 *.log
