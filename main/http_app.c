@@ -1569,6 +1569,115 @@ static esp_err_t power_config_post_handler(httpd_req_t *req) {
   return ESP_OK;
 }
 
+/* ── display mode config handlers ─────────────────────────────────── */
+
+static esp_err_t mode_config_get_handler(httpd_req_t *req) {
+  if (!http_check_basic_auth(req))
+    return ESP_OK;
+
+  int order[DISPLAY_MODE_MAX];
+  int on = display_mode_get_order(order, DISPLAY_MODE_MAX);
+
+  /* Build a compact JSON. With <=12 modes and short labels this fits well
+   * within a 1KB stack buffer. */
+  char buf[1024];
+  int off = 0;
+  off += snprintf(buf + off, sizeof(buf) - off, "{\"order\":[");
+  for (int i = 0; i < on; i++)
+    off +=
+        snprintf(buf + off, sizeof(buf) - off, "%s%d", i ? "," : "", order[i]);
+  off += snprintf(buf + off, sizeof(buf) - off, "],\"modes\":[");
+  for (int i = 0; i < on; i++) {
+    int idx = order[i];
+    char esc[48];
+    json_escape(esc, sizeof(esc), display_mode_label(idx));
+    off += snprintf(buf + off, sizeof(buf) - off,
+                    "%s{\"index\":%d,\"name\":\"%s\",\"label\":\"%s\","
+                    "\"enabled\":%s}",
+                    i ? "," : "", idx, display_mode_name(idx), esc,
+                    display_mode_is_enabled(idx) ? "true" : "false");
+  }
+  off += snprintf(buf + off, sizeof(buf) - off, "]}");
+
+  httpd_resp_set_type(req, "application/json");
+  httpd_resp_sendstr(req, buf);
+  return ESP_OK;
+}
+
+static esp_err_t mode_config_post_handler(httpd_req_t *req) {
+  if (!http_check_basic_auth(req))
+    return ESP_OK;
+
+  char body[512] = {0};
+  if (!http_read_request_body(req, body, sizeof(body), "请求为空"))
+    return ESP_OK;
+
+  cJSON *root = cJSON_Parse(body);
+  if (!root) {
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "JSON 格式错误");
+    return ESP_OK;
+  }
+
+  /* Parse the order array (optional). Each entry is a mode index. */
+  int new_order[DISPLAY_MODE_MAX];
+  int order_len = 0;
+  cJSON *jorder = cJSON_GetObjectItem(root, "order");
+  if (jorder && cJSON_IsArray(jorder)) {
+    int n = cJSON_GetArraySize(jorder);
+    for (int i = 0; i < n && order_len < DISPLAY_MODE_MAX; i++) {
+      cJSON *e = cJSON_GetArrayItem(jorder, i);
+      if (cJSON_IsNumber(e))
+        new_order[order_len++] = e->valueint;
+    }
+  }
+
+  /* Parse enabled map (optional). Accept either an object
+   * {"0":true,...} keyed by index or an array aligned to the order array. */
+  cJSON *jenabled = cJSON_GetObjectItem(root, "enabled");
+
+  /* Apply order first. */
+  if (order_len > 0)
+    display_mode_set_order(new_order, order_len);
+
+  /* Re-read the effective order so enabled flags map correctly. */
+  int order[DISPLAY_MODE_MAX];
+  int on = display_mode_get_order(order, DISPLAY_MODE_MAX);
+
+  if (jenabled && cJSON_IsArray(jenabled)) {
+    int n = cJSON_GetArraySize(jenabled);
+    for (int i = 0; i < n && i < on; i++) {
+      cJSON *e = cJSON_GetArrayItem(jenabled, i);
+      if (cJSON_IsBool(e))
+        display_mode_set_enabled(order[i], cJSON_IsTrue(e));
+    }
+  } else if (jenabled && cJSON_IsObject(jenabled)) {
+    cJSON *e = NULL;
+    cJSON_ArrayForEach(e, jenabled) {
+      int idx = atoi(e->string);
+      if (idx >= 0 && idx < on)
+        display_mode_set_enabled(idx, cJSON_IsTrue(e));
+    }
+  }
+
+  /* Ensure at least one mode stays enabled; otherwise re-enable the first. */
+  int any_enabled = 0;
+  for (int i = 0; i < on; i++)
+    if (display_mode_is_enabled(order[i])) {
+      any_enabled = 1;
+      break;
+    }
+  if (!any_enabled && on > 0)
+    display_mode_set_enabled(order[0], true);
+
+  cJSON_Delete(root);
+
+  display_mode_prefs_save();
+
+  httpd_resp_set_type(req, "application/json");
+  httpd_resp_sendstr(req, "{\"ok\":true}");
+  return ESP_OK;
+}
+
 /* countdown handlers moved to http_features.c */
 
 /* ── session open hook (reset inactivity timer) ───────────────────── */
@@ -1935,6 +2044,9 @@ esp_err_t http_app_start(const http_app_config_t *cfg) {
       {"/auth_config", HTTP_POST, auth_config_post_handler, NULL},
       {"/power_config", HTTP_GET, power_config_get_handler, NULL},
       {"/power_config", HTTP_POST, power_config_post_handler, NULL},
+      /* display mode enable/order config */
+      {"/mode_config", HTTP_GET, mode_config_get_handler, NULL},
+      {"/mode_config", HTTP_POST, mode_config_post_handler, NULL},
   };
   int registered = 0;
   for (int i = 0; i < (int)(sizeof(uris) / sizeof(uris[0])); i++) {

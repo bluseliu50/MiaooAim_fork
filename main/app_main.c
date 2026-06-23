@@ -304,6 +304,24 @@ static void boot_display_route(void) {
   int n = display_mode_count();
   bool write_mode_back = false;
   int mode = normalize_saved_mode(saved_mode, n, &write_mode_back);
+  /* If the saved mode was disabled by the user, fall back to the first
+   * enabled mode (still keeping the NVS preference untouched). */
+  if (!display_mode_is_enabled(mode)) {
+    int first = -1;
+    int order[DISPLAY_MODE_MAX];
+    int on = display_mode_get_order(order, DISPLAY_MODE_MAX);
+    for (int i = 0; i < on; i++)
+      if (display_mode_is_enabled(order[i])) {
+        first = order[i];
+        break;
+      }
+    if (first >= 0) {
+      ESP_LOGI(TAG, "boot_display_route: saved mode %d disabled, using %d",
+               mode, first);
+      mode = first;
+      write_mode_back = true;
+    }
+  }
   ESP_LOGI(TAG, "boot_display_route: switching to mode %d (%s)", mode,
            display_mode_name(mode));
   boot_epoch = 0;
@@ -504,11 +522,23 @@ static void quick_refresh_and_sleep(void) {
   ESP_ERROR_CHECK(codex_quota_init());
 
   register_display_modes();
+  display_mode_prefs_load();
 
   int saved_mode = mode;
   int n = display_mode_count();
   bool write_mode_back = false;
   mode = normalize_saved_mode(saved_mode, n, &write_mode_back);
+  /* Skip modes disabled by the user; keep NVS preference untouched. */
+  if (!display_mode_is_enabled(mode)) {
+    int order[DISPLAY_MODE_MAX];
+    int on = display_mode_get_order(order, DISPLAY_MODE_MAX);
+    for (int i = 0; i < on; i++)
+      if (display_mode_is_enabled(order[i])) {
+        mode = order[i];
+        write_mode_back = true;
+        break;
+      }
+  }
 
   bool time_valid = time_sync_get_local_relaxed(&(struct tm){0});
 
@@ -717,6 +747,7 @@ static void full_boot(void) {
   ESP_ERROR_CHECK(codex_quota_init());
 
   register_display_modes();
+  display_mode_prefs_load();
 
   if (epd_err == ESP_OK) {
     boot_display_route();

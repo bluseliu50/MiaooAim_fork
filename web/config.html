@@ -47,6 +47,10 @@
         <span class="msym icon">wifi</span>
         <span><b>连接 WiFi</b><span>扫描热点、切换网络。</span></span>
       </a>
+      <a class="quick-card" href="#modes">
+        <span class="msym icon">tune</span>
+        <span><b>功能切换</b><span>启用功能、自定义切换顺序。</span></span>
+      </a>
       <a class="quick-card" href="#panel">
         <span class="msym icon">monitor</span>
         <span><b>屏幕型号</b><span>选择面板、BUSY 电平。</span></span>
@@ -221,6 +225,19 @@
               <div class="overview-item"><small>设备时间</small><b id="ov_time">-</b></div>
               <div class="overview-item"><small>固件</small><b id="ov_fw">-</b></div>
             </div>
+          </div>
+        </section>
+
+        <section class="side-panel" id="modes">
+          <div class="side-head"><div><h2>功能切换顺序</h2></div></div>
+          <div class="side-body">
+            <div class="sub" style="margin-bottom:8px">勾选启用功能，拖动「⋮」调整按键切换顺序。被关闭的功能在按键切换时自动跳过。</div>
+            <ul id="modeList" class="mode-sort" style="list-style:none;padding:0;margin:0"></ul>
+            <div class="compact-actions" style="margin-top:10px">
+              <button class="btn primary" onclick="saveModes()">保存设置</button>
+              <button class="btn ghost sm" onclick="loadModes()">刷新</button>
+            </div>
+            <div class="log" id="modeLog">加载中…</div>
           </div>
         </section>
 
@@ -857,13 +874,119 @@ async function savePower(){
   });
 })();
 
+/* ── display mode order/enable config ── */
+var modeCache=[]; /* current rendered list: [{index,name,label,enabled}] */
+var modeDragSrc=null;
+
+function modeLog(m,t){var el=document.getElementById('modeLog');el.className='log'+(t?' '+t:'');el.textContent=m;}
+
+function renderModeList(modes){
+  modeCache=modes.slice();
+  var ul=document.getElementById('modeList');
+  ul.innerHTML='';
+  modes.forEach(function(m,i){
+    var li=document.createElement('li');
+    li.className='mode-item';
+    li.draggable=true;
+    li.dataset.pos=i;
+    li.innerHTML='<span class="msym mode-grip" title="拖动排序">drag_indicator</span>'
+      +'<label class="mode-chk"><input type="checkbox" data-idx="'+i+'" '+(m.enabled?'checked':'')+'><span></span></label>'
+      +'<span class="mode-label">'+escapeHtml(m.label)+'</span>'
+      +'<span class="mode-pos">'+(i+1)+'</span>';
+    ul.appendChild(li);
+  });
+  /* checkbox handlers */
+  ul.querySelectorAll('input[type=checkbox]').forEach(function(cb){
+    cb.addEventListener('change',function(){
+      var p=parseInt(this.dataset.idx);
+      modeCache[p].enabled=this.checked;
+    });
+  });
+  /* drag-and-drop reordering */
+  ul.querySelectorAll('.mode-item').forEach(function(li){
+    li.addEventListener('dragstart',function(e){
+      modeDragSrc=this; this.classList.add('dragging');
+      e.dataTransfer.effectAllowed='move';
+      try{e.dataTransfer.setData('text/plain','');}catch(_){}
+    });
+    li.addEventListener('dragend',function(){
+      this.classList.remove('dragging');
+      modeDragSrc=null;
+      rebuildModePositions();
+    });
+    li.addEventListener('dragover',function(e){
+      e.preventDefault();
+      e.dataTransfer.dropEffect='move';
+      if(!modeDragSrc||modeDragSrc===this)return;
+      var rect=this.getBoundingClientRect();
+      var after=(e.clientY > rect.top + rect.height/2);
+      var ul=this.parentNode;
+      if(after){
+        if(this.nextSibling!==modeDragSrc) ul.insertBefore(modeDragSrc,this.nextSibling);
+      }else{
+        if(this!==modeDragSrc) ul.insertBefore(modeDragSrc,this);
+      }
+    });
+  });
+}
+
+function rebuildModePositions(){
+  /* After a drag, read the DOM order back into modeCache. */
+  var items=document.querySelectorAll('#modeList .mode-item');
+  var next=[];
+  items.forEach(function(li){
+    var p=parseInt(li.dataset.pos);
+    next.push(modeCache[p]);
+  });
+  modeCache=next;
+  /* rewrite positions + dataset to match new order */
+  document.querySelectorAll('#modeList .mode-item').forEach(function(li,i){
+    li.dataset.pos=i;
+    li.querySelector('.mode-pos').textContent=String(i+1);
+    li.querySelector('input[type=checkbox]').dataset.idx=String(i);
+  });
+}
+
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+
+async function loadModes(){
+  modeLog('加载中…');
+  try{
+    var r=await fetch('/mode_config',epdFetchOpts());
+    var j=await r.json();
+    /* j.modes is in order[] sequence already; j.order is the index list */
+    var modes=(j.modes||[]).map(function(m){return {index:m.index,name:m.name,label:m.label,enabled:!!m.enabled};});
+    renderModeList(modes);
+    var on=modes.filter(function(m){return m.enabled;}).length;
+    modeLog('共 '+modes.length+' 个功能，已启用 '+on+' 个。');
+  }catch(e){modeLog('加载失败: '+e,'bad');}
+}
+
+async function saveModes(){
+  if(modeCache.length===0){modeLog('请先加载','bad');return;}
+  var order=modeCache.map(function(m){return m.index;});
+  var enabled=modeCache.map(function(m){return m.enabled;});
+  if(enabled.every(function(e){return !e;})){
+    if(!confirm('所有功能都已关闭，按键将无法切换。仍要保存吗？'))return;
+  }
+  modeLog('保存中…');
+  try{
+    var r=await fetch('/mode_config',epdFetchOpts({method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order:order,enabled:enabled})}));
+    var j=await r.json();
+    if(j.ok){
+      modeLog('已保存！按键切换顺序已更新。','ok');
+      await loadModes();
+    }else modeLog('保存失败','bad');
+  }catch(e){modeLog('请求失败: '+e,'bad');}
+}
+
 function bkLog(s,cls){var el=document.getElementById('bkLog');el.className='log'+(cls?' '+cls:'');el.textContent=s;}
 
 async function exportConfig(){
   bkLog('正在收集所有配置…');
   try{
-    var endpoints=['/weather_config','/codex_quota_config','/clock_config','/msg_config','/slideshow','/timetable.json','/todo.json','/countdown_config','/power_config'];
-    var names=['weather','codex_quota','clock','message','slideshow','timetable','todo','countdown','power'];
+    var endpoints=['/weather_config','/codex_quota_config','/clock_config','/msg_config','/slideshow','/timetable.json','/todo.json','/countdown_config','/power_config','/mode_config'];
+    var names=['weather','codex_quota','clock','message','slideshow','timetable','todo','countdown','power','modes'];
     var backup={_version:1,_date:new Date().toISOString()};
     for(var i=0;i<endpoints.length;i++){
       try{var r=await fetch(endpoints[i],epdFetchOpts({}));backup[names[i]]=await r.json();}catch(e){backup[names[i]]=null;}
@@ -886,7 +1009,7 @@ async function importConfig(input){
     var backup=JSON.parse(text);
     if(!backup._version){bkLog('文件格式无效，请使用导出的备份文件','bad');return;}
     var map={weather:'/weather_config',codex_quota:'/codex_quota_config',clock:'/clock_config',message:'/msg_config',slideshow:'/slideshow',
-      timetable:'/timetable',todo:'/todo',countdown:'/countdown_config',power:'/power_config'};
+      timetable:'/timetable',todo:'/todo',countdown:'/countdown_config',power:'/power_config',modes:'/mode_config'};
     var ok=0,fail=0;
     for(var key in map){
       if(!backup[key])continue;
@@ -908,6 +1031,7 @@ async function initConfigPage(){
   await loadVersion();
   await loadAuth();
   await loadPower();
+  await loadModes();
 }
 initConfigPage();
 // keep the live overview (memory / time / connection) fresh without noisy logs

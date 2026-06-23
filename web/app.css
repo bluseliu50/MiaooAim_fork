@@ -116,6 +116,19 @@ input[type=file]::file-selector-button{margin-right:10px;padding:6px 14px;border
 .switch-row b{font-weight:600}
 .switch-row>span:first-child>span:last-child{color:var(--t2);font-size:11px}
 .empty{text-align:center;padding:28px 20px;color:var(--t3);font-size:13px}
+/* ── Mode sort list (config: display mode order/enable) ── */
+.mode-sort .mode-item{display:flex;align-items:center;gap:10px;padding:9px 8px;border-bottom:1px solid var(--line2);font-size:13px;cursor:grab}
+.mode-sort .mode-item:last-child{border-bottom:none}
+.mode-sort .mode-item.dragging{opacity:.4;cursor:grabbing}
+.mode-sort .mode-grip{color:var(--t3);font-size:18px;cursor:grab;flex-shrink:0}
+.mode-sort .mode-chk{position:relative;display:inline-block;width:18px;height:18px;flex-shrink:0;cursor:pointer}
+.mode-sort .mode-chk input{opacity:0;width:0;height:0;position:absolute}
+.mode-sort .mode-chk span{position:absolute;inset:0;border:1px solid var(--line);background:var(--sf);transition:background .12s,border-color .12s}
+.mode-sort .mode-chk span:after{content:"";position:absolute;left:5px;top:1px;width:5px;height:10px;border:solid var(--bt);border-width:0 2px 2px 0;transform:rotate(45deg);opacity:0;transition:opacity .12s}
+.mode-sort .mode-chk input:checked+span{background:var(--bbg);border-color:var(--bbg)}
+.mode-sort .mode-chk input:checked+span:after{opacity:1}
+.mode-sort .mode-label{flex:1;min-width:0;font-weight:500}
+.mode-sort .mode-pos{color:var(--t3);font-size:11px;font-variant-numeric:tabular-nums;flex-shrink:0;min-width:16px;text-align:right}
 
 /* ── Footer ── */
 .epd-credit{margin:32px 0 0;padding:16px 0 0;border-top:1px solid var(--line);font-size:11px;color:var(--t2);text-align:center;line-height:1.6;text-transform:uppercase;letter-spacing:.04em}
