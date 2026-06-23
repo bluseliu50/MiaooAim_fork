@@ -2041,13 +2041,13 @@ static void render_quota_page(const codex_quota_config_t *cfg,
   int y = 48;
 
   /* Plan label bar: provider left, plan right (no separator dot). */
-  fb_fill_rect(fb, 12, y, W - 24, 18, COLOR_BLACK);
-  fb_utf8_scaled(fb, 18, y + 4, prov, COLOR_WHITE, 1);
+  fb_fill_rect(fb, 12, y, W - 24, 20, COLOR_BLACK);
+  fb_utf8_scaled(fb, 18, y + 2, prov, COLOR_WHITE, 1);
   if (data->plan[0]) {
     int pw = ui_text_width(data->plan, 1);
-    fb_utf8_scaled(fb, W - 18 - pw, y + 4, data->plan, COLOR_WHITE, 1);
+    fb_utf8_scaled(fb, W - 18 - pw, y + 2, data->plan, COLOR_WHITE, 1);
   }
-  y += 26;
+  y += 28;
 
   if (scene == SCENE_BALANCE) {
     /* Balance scene: big remaining value + usage breakdown */
@@ -2332,7 +2332,7 @@ static esp_err_t codex_quota_show_inner(void) {
   codex_quota_config_t cfg;
   config_snapshot(&cfg);
   if (!config_ready(&cfg)) {
-    render_quota_page(&cfg, NULL, "请先在网页配置平台与凭据");
+    ESP_LOGW(TAG, "quota show blocked: not configured");
     return ESP_ERR_INVALID_STATE;
   }
 
