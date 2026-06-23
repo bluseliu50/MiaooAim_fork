@@ -976,7 +976,26 @@ static esp_err_t codex_quota_config_get_handler(httpd_req_t *req) {
 
   codex_quota_config_t cfg;
   codex_quota_data_t data;
-  codex_quota_get_config(&cfg);
+
+  /* Optional ?provider=N: return that provider's saved credentials without
+   * changing the active provider (lets the web UI load per-provider tokens). */
+  bool use_provider = false;
+  uint8_t qprovider = 0;
+  char qbuf[32] = {0};
+  if (httpd_req_get_url_query_str(req, qbuf, sizeof(qbuf)) == ESP_OK) {
+    char pval[8] = {0};
+    if (httpd_query_key_value(qbuf, "provider", pval, sizeof(pval)) == ESP_OK) {
+      int pv = atoi(pval);
+      if (pv >= 0 && pv < QUOTA_PROVIDER_MAX) {
+        use_provider = true;
+        qprovider = (uint8_t)pv;
+      }
+    }
+  }
+  if (use_provider)
+    codex_quota_get_provider_config(&cfg, qprovider);
+  else
+    codex_quota_get_config(&cfg);
   codex_quota_get_data_copy(&data);
 
   cJSON *root = cJSON_CreateObject();
@@ -985,21 +1004,44 @@ static esp_err_t codex_quota_config_get_handler(httpd_req_t *req) {
     return ESP_OK;
   }
   cJSON_AddBoolToObject(root, "enabled", cfg.enabled);
+  cJSON_AddNumberToObject(root, "provider", (double)cfg.provider);
+  cJSON_AddStringToObject(
+      root, "provider_name",
+      codex_quota_provider_name((quota_provider_t)cfg.provider));
   cJSON_AddStringToObject(root, "api_url", cfg.api_url);
   cJSON_AddStringToObject(root, "api_key", "");
   cJSON_AddBoolToObject(root, "api_key_set", cfg.api_key[0] != '\0');
+  cJSON_AddBoolToObject(root, "ak_id_set", cfg.access_key_id[0] != '\0');
+  cJSON_AddBoolToObject(root, "ak_sk_set", cfg.secret_access_key[0] != '\0');
   cJSON_AddStringToObject(root, "unit", cfg.unit);
   cJSON_AddNumberToObject(root, "refresh_min", cfg.refresh_min);
   cJSON_AddBoolToObject(root, "has_data", data.valid);
   if (data.valid) {
-    cJSON_AddNumberToObject(root, "remaining", data.remaining);
-    cJSON_AddNumberToObject(root, "used", data.used);
-    cJSON_AddNumberToObject(root, "total", data.total);
-    cJSON_AddNumberToObject(root, "percent_used", data.percent_used);
-    cJSON_AddNumberToObject(root, "request_count", data.request_count);
+    cJSON_AddNumberToObject(root, "kind", (double)data.kind);
+    cJSON_AddStringToObject(root, "plan", data.plan);
     cJSON_AddStringToObject(root, "update_time", data.update_time);
-    cJSON_AddStringToObject(root, "account", data.account);
     cJSON_AddStringToObject(root, "message", data.message);
+    /* subscription quota: tiers[] */
+    if (data.kind == 0) {
+      cJSON *tiers = cJSON_AddArrayToObject(root, "tiers");
+      for (int i = 0; i < data.tier_count && tiers; i++) {
+        cJSON *t = cJSON_CreateObject();
+        cJSON_AddStringToObject(t, "name", data.tiers[i].name);
+        cJSON_AddNumberToObject(t, "utilization", data.tiers[i].utilization);
+        cJSON_AddNumberToObject(t, "reset_ts", (double)data.tiers[i].reset_ts);
+        if (data.tiers[i].have_abs) {
+          cJSON_AddNumberToObject(t, "used_value", data.tiers[i].used_value);
+          cJSON_AddNumberToObject(t, "max_value", data.tiers[i].max_value);
+        }
+        cJSON_AddItemToArray(tiers, t);
+      }
+    } else {
+      /* balance */
+      cJSON_AddNumberToObject(root, "remaining", data.remaining);
+      cJSON_AddNumberToObject(root, "used", data.used);
+      cJSON_AddNumberToObject(root, "total", data.total);
+      cJSON_AddNumberToObject(root, "percent_used", data.percent_used);
+    }
   }
   char *str = cJSON_PrintUnformatted(root);
   cJSON_Delete(root);
@@ -1016,7 +1058,7 @@ static esp_err_t codex_quota_config_get_handler(httpd_req_t *req) {
 static esp_err_t codex_quota_config_post_handler(httpd_req_t *req) {
   if (!http_check_basic_auth(req))
     return ESP_OK;
-  char buf[768] = {0};
+  char buf[1024] = {0};
   if (!http_read_request_body(req, buf, sizeof(buf), "请求体错误"))
     return ESP_OK;
 
@@ -1027,11 +1069,29 @@ static esp_err_t codex_quota_config_post_handler(httpd_req_t *req) {
   }
 
   codex_quota_config_t cfg;
-  codex_quota_get_config(&cfg);
+
+  /* Determine the provider the POST targets. Start from that provider's saved
+   * credentials (not the active provider's) so a save for provider B doesn't
+   * accidentally inherit provider A's key when the field is omitted. */
+  cJSON *jp = cJSON_GetObjectItem(root, "provider");
+  uint8_t post_provider;
+  codex_quota_config_t cur;
+  codex_quota_get_config(&cur);
+  if (jp && cJSON_IsNumber(jp))
+    post_provider = (uint8_t)jp->valuedouble;
+  else
+    post_provider = cur.provider;
+  if (post_provider >= QUOTA_PROVIDER_MAX)
+    post_provider = cur.provider;
+  if (post_provider == cur.provider)
+    cfg = cur; /* active provider: creds already loaded */
+  else
+    codex_quota_get_provider_config(&cfg, post_provider);
 
   cJSON *j;
   if ((j = cJSON_GetObjectItem(root, "enabled")) && cJSON_IsBool(j))
     cfg.enabled = cJSON_IsTrue(j);
+  cfg.provider = post_provider;
   const char *s;
   if ((s = cJSON_GetStringValue(cJSON_GetObjectItem(root, "api_url"))))
     snprintf(cfg.api_url, sizeof(cfg.api_url), "%s", s);
@@ -1041,6 +1101,18 @@ static esp_err_t codex_quota_config_post_handler(httpd_req_t *req) {
   j = cJSON_GetObjectItem(root, "api_key_clear");
   if (j && cJSON_IsTrue(j))
     cfg.api_key[0] = '\0';
+  /* Volcengine AK/SK */
+  if ((s = cJSON_GetStringValue(cJSON_GetObjectItem(root, "access_key_id"))))
+    snprintf(cfg.access_key_id, sizeof(cfg.access_key_id), "%s", s);
+  j = cJSON_GetObjectItem(root, "ak_id_clear");
+  if (j && cJSON_IsTrue(j))
+    cfg.access_key_id[0] = '\0';
+  if ((s = cJSON_GetStringValue(
+           cJSON_GetObjectItem(root, "secret_access_key"))))
+    snprintf(cfg.secret_access_key, sizeof(cfg.secret_access_key), "%s", s);
+  j = cJSON_GetObjectItem(root, "ak_sk_clear");
+  if (j && cJSON_IsTrue(j))
+    cfg.secret_access_key[0] = '\0';
   if ((s = cJSON_GetStringValue(cJSON_GetObjectItem(root, "unit"))))
     snprintf(cfg.unit, sizeof(cfg.unit), "%s", s);
   if ((j = cJSON_GetObjectItem(root, "refresh_min")) && cJSON_IsNumber(j))

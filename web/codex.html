@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Codex 额度 — 喵喵墨水屏</title>
+<title>Coding 额度 — 喵喵墨水屏</title>
 <link rel="stylesheet" href="/app.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0">
 </head>
 <body class="codex">
 <div class="wrap">
-  <div class="hdr"><div><div class="title">Codex 额度</div></div></div>
+  <div class="hdr"><div><div class="title">Coding 额度</div></div></div>
   <nav class="nav">
     <a href="/"><span class="msym sm">upload</span>上传</a>
     <a href="/gallery"><span class="msym sm">view_carousel</span>轮播</a>
@@ -25,16 +25,38 @@
     <a href="/config"><span class="msym sm">settings</span>配置</a>
   </nav>
   <div class="card">
-    <div class="hd"><div class="title">Codex 额度</div></div>
+    <div class="hd"><div class="title">Coding 额度</div></div>
     <div class="bd">
       <div class="kv"><div class="k">额度状态</div><div class="v" id="cq_status">-</div><div class="k">最新数据</div><div class="v" id="cq_data">-</div></div>
       <div class="form-row"><label>启用额度页</label>
         <label class="inline"><span class="toggle"><input type="checkbox" id="cqEnabled"><span class="sl"></span></span><span id="cqLabel">已关闭</span></label>
       </div>
-      <div class="field-group"><label>额度 API URL</label><input type="text" id="cqApiUrl" placeholder="https://dash.classicriver.cn/v1/usage"></div>
-      <div class="field-group"><label>API Key</label><input type="password" id="cqApiKey" placeholder="sk-..."></div>
-      <div class="field-group"><label>显示单位</label><input type="text" id="cqUnit" placeholder="USD / 元 / credits"></div>
+      <div class="field-group"><label>查询平台</label><select id="cqProvider">
+        <option value="0">中转站（自定义额度 API）</option>
+        <option value="1">Kimi For Coding</option>
+        <option value="2">智谱 GLM（bigmodel.cn）</option>
+        <option value="3">智谱 GLM（z.ai）</option>
+        <option value="4">MiniMax（minimaxi.com）</option>
+        <option value="5">MiniMax（minimax.io）</option>
+        <option value="6">ZenMux</option>
+        <option value="7">火山方舟 Agent/Coding Plan</option>
+        <option value="8">Codex / ChatGPT</option>
+        <option value="9">Gemini</option>
+        <option value="10">GitHub Copilot</option>
+        <option value="11">DeepSeek</option>
+        <option value="12">StepFun</option>
+        <option value="13">硅基流动（siliconflow.cn）</option>
+        <option value="14">SiliconFlow（.com）</option>
+        <option value="15">OpenRouter</option>
+        <option value="16">Novita AI</option>
+      </select></div>
+      <div class="field-group" id="cqUrlRow"><label>额度 API URL</label><input type="text" id="cqApiUrl" placeholder="https://relay.example.com/v1/usage"></div>
+      <div class="field-group" id="cqKeyRow"><label id="cqKeyLabel">API Key</label><input type="password" id="cqApiKey" placeholder="sk-..."></div>
+      <div class="field-group" id="cqAkIdRow" style="display:none"><label>AccessKey ID（火山）</label><input type="text" id="cqAkId" placeholder="AKxxx"></div>
+      <div class="field-group" id="cqAkSkRow" style="display:none"><label>Secret Access Key（火山）</label><input type="password" id="cqAkSk" placeholder="账号级 Secret"></div>
+      <div class="field-group" id="cqUnitRow"><label>显示单位</label><input type="text" id="cqUnit" placeholder="USD / 元 / credits"></div>
       <div class="field-group"><label>自动刷新</label><select id="cqRefresh"><option value="0">仅手动刷新</option><option value="5">自动：每 5 分钟</option><option value="15">自动：每 15 分钟</option><option value="30">自动：每 30 分钟</option></select></div>
+      <div class="hint" id="cqHint" style="display:none;color:#888;font-size:13px;margin:6px 0;"></div>
       <div class="actions">
         <button class="btn" onclick="saveCodexQuota()">保存设置</button>
         <button class="btn ghost sm" onclick="showCodexQuota()">立即显示</button>
@@ -49,14 +71,158 @@
 function epdAuthHeaders(){try{var u=localStorage.getItem('epd_auth_u');var p=localStorage.getItem('epd_auth_p');if(u!=null&&p!=null&&u!==''&&p!=='')return {'Authorization':'Basic '+btoa(unescape(encodeURIComponent(u+':'+p)))};}catch(e){}return {};}
 function epdFetchOpts(extra){extra=extra||{};var h=Object.assign({},epdAuthHeaders(),extra.headers||{});return Object.assign({},extra,{headers:h});}
 
-function cqLog(s,cls){const el=document.getElementById('cqLog');el.className='log'+(cls?' '+cls:'');el.textContent=s;}var codexQuotaKeyConfigured=false;
+function cqLog(s,cls){const el=document.getElementById('cqLog');el.className='log'+(cls?' '+cls:'');el.textContent=s;}
+var codexQuotaKeyConfigured=false, codexAkIdConfigured=false, codexAkSkConfigured=false;
+
+/* Platform metadata: which fields each provider needs. */
+var PROV_META={
+ 0:{url:1,key:1,unit:1,label:'中转站 API Key'},
+ 1:{url:0,key:1,unit:0,label:'Kimi API Key'},
+ 2:{url:0,key:1,unit:0,label:'智谱 API Key（裸 Token）'},
+ 3:{url:0,key:1,unit:0,label:'Z.AI API Key（裸 Token）'},
+ 4:{url:0,key:1,unit:0,label:'MiniMax API Key'},
+ 5:{url:0,key:1,unit:0,label:'MiniMax API Key'},
+ 6:{url:1,key:1,unit:0,label:'ZenMux API Key'},
+ 7:{url:0,key:0,unit:0,label:'-',ak:1},
+ 8:{url:0,key:1,unit:0,label:'Codex Access Token'},
+ 9:{url:0,key:1,unit:0,label:'Gemini Access Token'},
+ 10:{url:0,key:1,unit:0,label:'GitHub Token'},
+ 11:{url:0,key:1,unit:1,label:'DeepSeek API Key'},
+ 12:{url:0,key:1,unit:1,label:'StepFun API Key'},
+ 13:{url:0,key:1,unit:1,label:'硅基流动 API Key'},
+ 14:{url:0,key:1,unit:1,label:'SiliconFlow API Key'},
+ 15:{url:0,key:1,unit:1,label:'OpenRouter API Key'},
+ 16:{url:0,key:1,unit:1,label:'Novita API Key'}
+};
+
+/* Show/hide fields for the selected provider (no credential reload). */
+function updateProviderFieldsNoReload(){
+  var p=parseInt(document.getElementById('cqProvider').value,10)||0;
+  var m=PROV_META[p]||PROV_META[0];
+  document.getElementById('cqUrlRow').style.display=m.url?'':'none';
+  document.getElementById('cqKeyRow').style.display=m.key?'':'none';
+  document.getElementById('cqKeyLabel').textContent=m.label||'API Key';
+  document.getElementById('cqAkIdRow').style.display=m.ak?'':'none';
+  document.getElementById('cqAkSkRow').style.display=m.ak?'':'none';
+  document.getElementById('cqUnitRow').style.display=m.unit?'':'none';
+  updateProviderHint(p);
+}
+
+/* Zhipu z.ai / bigmodel.cn: one may lack query permission; nudge the user to
+ * try the other domain. Light gray text above the save button. */
+function updateProviderHint(p){
+  var el=document.getElementById('cqHint');
+  if(!el) return;
+  if(p===2){el.style.display='';el.textContent='若无法获取额度，可尝试切换到「智谱 GLM（z.ai）」';}
+  else if(p===3){el.style.display='';el.textContent='若无法获取额度，可尝试切换到「智谱 GLM（bigmodel.cn）」';}
+  else{el.style.display='none';el.textContent='';}
+}
+
+/* Show/hide fields, then reload the selected provider's saved credentials.
+ * Each provider keeps its own token; switching the dropdown never discards a
+ * previously-saved token. */
+function updateProviderFields(){
+  updateProviderFieldsNoReload();
+  var p=parseInt(document.getElementById('cqProvider').value,10)||0;
+  loadCodexQuota(p);
+}
+
 function normalizeCodexQuotaUrl(url){url=(url||'').trim();if(!url) return '';if(url.indexOf('/v1/usage')>=0) return url;url=url.replace(/\/api\/usage\/token\/?$/,'').replace(/\/api\/user\/self\/?$/,'');url=url.replace(/\/+$/,'');if(url.endsWith('/v1')) return url+'/usage';return url+'/v1/usage';}
-function collectCodexQuotaCfg(){var cfg={enabled:document.getElementById('cqEnabled').checked,api_url:normalizeCodexQuotaUrl(document.getElementById('cqApiUrl').value),api_key:document.getElementById('cqApiKey').value.trim(),unit:document.getElementById('cqUnit').value.trim()||'USD',refresh_min:parseInt(document.getElementById('cqRefresh').value,10)||0};document.getElementById('cqApiUrl').value=cfg.api_url;if(!cfg.api_key&&codexQuotaKeyConfigured) delete cfg.api_key;return cfg;}
+
+function collectCodexQuotaCfg(){
+  var p=parseInt(document.getElementById('cqProvider').value,10)||0;
+  var m=PROV_META[p]||PROV_META[0];
+  var cfg={enabled:document.getElementById('cqEnabled').checked,provider:p};
+  if(m.url){cfg.api_url=normalizeCodexQuotaUrl(document.getElementById('cqApiUrl').value);document.getElementById('cqApiUrl').value=cfg.api_url;}
+  var key=document.getElementById('cqApiKey').value.trim();
+  if(m.key){cfg.api_key=key;if(!cfg.api_key&&codexQuotaKeyConfigured) delete cfg.api_key;}
+  if(m.ak){
+    var akid=document.getElementById('cqAkId').value.trim();
+    if(akid) cfg.access_key_id=akid; else if(codexAkIdConfigured) delete cfg.access_key_id;
+    var aksk=document.getElementById('cqAkSk').value.trim();
+    if(aksk) cfg.secret_access_key=aksk; else if(codexAkSkConfigured) delete cfg.secret_access_key;
+  }
+  if(m.unit){cfg.unit=document.getElementById('cqUnit').value.trim()||'USD';}
+  cfg.refresh_min=parseInt(document.getElementById('cqRefresh').value,10)||0;
+  return cfg;
+}
+
 function formatQuotaAmount(v,unit){if(v===undefined||v===null||isNaN(Number(v))) return '--';var n=Number(v);var s=Math.abs(n)>=1000?String(Math.round(n)):n.toFixed(2);return s+' '+(unit||'');}
-async function loadCodexQuota(){try{const r=await fetch('/codex_quota_config',epdFetchOpts());const j=await r.json();codexQuotaKeyConfigured=!!j.api_key_set;document.getElementById('cqEnabled').checked=!!j.enabled;document.getElementById('cqLabel').textContent=j.enabled?'已开启':'已关闭';document.getElementById('cqApiUrl').value=j.api_url||'';document.getElementById('cqApiKey').value=j.api_key||'';document.getElementById('cqApiKey').placeholder=codexQuotaKeyConfigured?'已保存，留空不修改':'中转站 API Key';document.getElementById('cqUnit').value=j.unit||'USD';document.getElementById('cqRefresh').value=String(j.refresh_min===undefined?5:j.refresh_min);const st=document.getElementById('cq_status');if(j.enabled){st.textContent=(j.refresh_min?('运行中，每 '+j.refresh_min+' 分钟自动刷新'):'运行中，手动刷新');st.className='v ok';}else{st.textContent='已关闭';st.className='v warn';}const data=document.getElementById('cq_data');if(j.has_data){data.textContent='剩余 '+formatQuotaAmount(j.remaining,j.unit)+'，已用 '+(j.percent_used||0)+'% ('+(j.update_time||'--')+')';data.className='v';}else{data.textContent='暂无数据';data.className='v warn';}cqLog('设置已加载。');}catch(e){cqLog('加载失败: '+e,'bad');}}
-async function saveCodexQuota(){var cfg=collectCodexQuotaCfg();if(cfg.enabled&&(!cfg.api_url||!(cfg.api_key||codexQuotaKeyConfigured))){cqLog('请填写额度 API URL 和 API Key','bad');return;}cqLog('保存中…');try{const r=await fetch('/codex_quota_config',epdFetchOpts({method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)}));const j=await r.json();if(j.ok){cqLog('设置已保存。开启自动刷新后，停留在“额度”模式会按间隔刷新。','ok');await loadCodexQuota();}else cqLog('保存失败','bad');}catch(e){cqLog('请求失败: '+e,'bad');}}
-async function showCodexQuota(){cqLog('正在请求额度接口并渲染…墨水屏较慢，请耐心等待');var ctrl=new AbortController();var t=setTimeout(function(){ctrl.abort();},120000);try{const r=await fetch('/codex_quota_show',epdFetchOpts({method:'POST',signal:ctrl.signal}));const j=await r.json();if(j.ok){cqLog('额度已显示在墨水屏上！','ok');await loadCodexQuota();}else cqLog('额度获取失败，请检查 API URL、Key 和接口返回字段。','bad');}catch(e){cqLog('请求失败: '+(e.name==='AbortError'?'超时（墨水屏仍在刷新可稍后再试）':e),'bad');}finally{clearTimeout(t);}}
-(function(){var ce=document.getElementById('cqEnabled');if(ce)ce.addEventListener('change',function(e){document.getElementById('cqLabel').textContent=e.target.checked?'已开启':'已关闭';});})();
+/* Load config. If `provider` is given, only refresh that provider's credential
+ * fields (used when the dropdown changes); otherwise full reload incl. status. */
+async function loadCodexQuota(provider){
+  try{
+    var url='/codex_quota_config';
+    if(provider!==undefined) url+='?provider='+encodeURIComponent(provider);
+    const r=await fetch(url,epdFetchOpts());
+    const j=await r.json();
+    codexQuotaKeyConfigured=!!j.api_key_set;codexAkIdConfigured=!!j.ak_id_set;codexAkSkConfigured=!!j.ak_sk_set;
+    if(provider===undefined){
+      /* full reload: shared settings + status + data */
+      document.getElementById('cqEnabled').checked=!!j.enabled;
+      document.getElementById('cqLabel').textContent=j.enabled?'已开启':'已关闭';
+      document.getElementById('cqProvider').value=String(j.provider||0);
+      updateProviderFieldsNoReload();
+      document.getElementById('cqUnit').value=j.unit||'USD';
+      document.getElementById('cqRefresh').value=String(j.refresh_min===undefined?5:j.refresh_min);
+      var st=document.getElementById('cq_status');
+      if(j.enabled){st.textContent=(j.provider_name||'中转站')+(j.refresh_min?(' · 每 '+j.refresh_min+' 分钟'):' · 手动');}
+      else st.textContent='已关闭';
+      var dt=document.getElementById('cq_data');
+      if(j.has_data){
+        if(j.kind===0&&j.tiers&&j.tiers.length){
+          dt.innerHTML=j.tiers.map(function(t){return tierCn(t.name)+' '+Math.round(t.utilization)+'% ('+resetCountdown(t.reset_ts)+')';}).join('；');
+        }else if(j.kind===1){
+          dt.textContent='剩余 '+formatQuotaAmount(j.remaining,j.unit)+(j.percent_used?(' · 已用 '+j.percent_used+'%'):'');
+        }else{dt.textContent=j.update_time||'-';}
+      }else dt.textContent='暂无数据';
+      cqLog(j.enabled?'已加载配置，点击「立即显示」刷新墨水屏。':'配置已加载，当前未开启。');
+    }
+    /* credential fields (always refresh, for both full + per-provider load) */
+    document.getElementById('cqApiUrl').value=j.api_url||'';
+    document.getElementById('cqApiKey').value=j.api_key||'';
+    document.getElementById('cqApiKey').placeholder=codexQuotaKeyConfigured?'已保存，留空不修改':'';
+    document.getElementById('cqAkId').value='';
+    document.getElementById('cqAkId').placeholder=codexAkIdConfigured?'已保存，留空不修改':'AKxxx';
+    document.getElementById('cqAkSk').value='';
+    document.getElementById('cqAkSk').placeholder=codexAkSkConfigured?'已保存，留空不修改':'账号级 Secret';
+  }catch(e){cqLog('加载失败: '+e,'bad');}
+}
+
+async function saveCodexQuota(){
+  var cfg=collectCodexQuotaCfg();
+  var m=PROV_META[cfg.provider]||PROV_META[0];
+  if(cfg.enabled){
+    if(m.url&&!cfg.api_url){cqLog('请填写额度 API URL','bad');return;}
+    if(m.key&&!(cfg.api_key||codexQuotaKeyConfigured)){cqLog('请填写 API Key','bad');return;}
+    if(m.ak&&!(cfg.access_key_id||codexAkIdConfigured)){cqLog('请填写火山 AccessKey ID','bad');return;}
+    if(m.ak&&!(cfg.secret_access_key||codexAkSkConfigured)){cqLog('请填写火山 Secret Access Key','bad');return;}
+  }
+  cqLog('保存中…');
+  try{
+    const r=await fetch('/codex_quota_config',epdFetchOpts({method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)}));
+    const j=await r.json();
+    if(j.ok){cqLog('设置已保存。停留额度页会按设定间隔自动刷新。','ok');await loadCodexQuota();}
+    else cqLog('保存失败','bad');
+  }catch(e){cqLog('请求失败: '+e,'bad');}
+}
+
+async function showCodexQuota(){
+  cqLog('正在请求额度接口并渲染…墨水屏较慢，请耐心等待');
+  var ctrl=new AbortController();var t=setTimeout(function(){ctrl.abort();},120000);
+  try{
+    const r=await fetch('/codex_quota_show',epdFetchOpts({method:'POST',signal:ctrl.signal}));
+    const j=await r.json();
+    if(j.ok){cqLog('额度已显示在墨水屏上！','ok');await loadCodexQuota();}
+    else cqLog('额度获取失败，请检查平台、Key 与接口返回。','bad');
+  }catch(e){cqLog('请求失败: '+(e.name==='AbortError'?'超时（墨水屏仍在刷新可稍后再试）':e),'bad');}
+  finally{clearTimeout(t);}
+}
+
+(function(){
+  var pe=document.getElementById('cqProvider');if(pe)pe.addEventListener('change',updateProviderFields);
+  var ce=document.getElementById('cqEnabled');if(ce)ce.addEventListener('change',function(e){document.getElementById('cqLabel').textContent=e.target.checked?'已开启':'已关闭';});
+})();
 loadCodexQuota();
 </script>
 </body>
