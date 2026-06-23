@@ -2,6 +2,7 @@
 build/
 sdkconfig
 sdkconfig.old
+.cache
 
 # ESP-IDF managed components (auto-downloaded)
 managed_components/
