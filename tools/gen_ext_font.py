@@ -24,6 +24,7 @@ from pathlib import Path
 
 
 FONT_CANDIDATES = [
+    "tools/fonts/FZPingXianYaSong.ttf",
     "tools/fonts/noto/LXGW975YuanSC-400W.ttf",
     "tools/fonts/noto/LXGW975YuanSC-500W.ttf",
     "tools/fonts/noto/ResourceHanRoundedCN-Medium.ttf",
@@ -37,6 +38,7 @@ FONT_CANDIDATES = [
 ]
 
 ASCII_FONT_CANDIDATES = [
+    "tools/fonts/FZPingXianYaSong.ttf",
     "tools/fonts/noto/LXGW975YuanSC-400W.ttf",
     "tools/fonts/noto/LXGW975YuanSC-500W.ttf",
     "tools/fonts/noto/NotoSansMono-Regular.ttf",

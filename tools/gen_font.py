@@ -5,6 +5,7 @@ import sys, os, gzip, io
 UNIFONT_URL = "https://unifoundry.com/pub/unifont/unifont-16.0.02/font-builds/unifont-16.0.02.hex.gz"
 
 UI_FONT_CANDIDATES = [
+    "tools/fonts/FZPingXianYaSong.ttf",
     "C:/Windows/Fonts/Deng.ttf",
     "C:/Windows/Fonts/msyh.ttc",
     "C:/Windows/Fonts/Dengl.ttf",
