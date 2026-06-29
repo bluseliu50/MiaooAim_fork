@@ -44,7 +44,7 @@
 - 📊 **Codex 额度看板** — 支持中转站 `/v1/usage` 额度接口，网页配置 API Key 后可在墨水屏显示余额、用量、请求数和令牌数
 - 🎓 **课程表** — 学期周次管理，自动高亮当前课程
 - 🌤️ **天气日历** — 和风天气 API + 农历 + 节气 + 节日
-- 📋 **待办/倒计时** — 优先级管理 + 进度条 + 目标日期倒数
+- 📋 **待办/倒数日** — 优先级管理 + 进度条 + 目标日期倒数
 - 🎨 **画布留言板** — WYSIWYG Web 可视化编辑器，支持文本、形状、图标混合排版
 
 ## 📷 功能展示
@@ -58,7 +58,7 @@
 | 天气 | 和风天气 API，实时 + 3 天预报 |
 | 课程表 | 学期周次 + 7×12 网格 + 当前/下节课高亮 |
 | 待办事项 | 优先级(普通/重要/紧急) + 完成状态 + 进度条 |
-| 倒计时 | 最多 3 个目标日期倒数 |
+| 倒数日 | 最多 3 个目标日期倒数 |
 | Codex 额度 | 中转站额度 API，余额/已用/今日用量/请求数/令牌数看板 |
 | 留言板 | 自定义文字 / 字号 / 对齐 / 颜色 |
 | 画布留言板 | 可视化 Web 编辑器，支持任意拖拽排版文本、直线、矩形、椭圆与内置/自定义图标 |
@@ -91,9 +91,9 @@
 | :---: | :---: |
 | ![4.2寸天气模式](docs/images/device-4-2-weather.jpg) | ![4.2寸图片模式](docs/images/device-4-2-art.jpg) |
 
-| `4.2寸待办模式.jpg` | `4.2寸倒计时模式.jpg` |
+| `4.2寸待办模式.jpg` | `4.2寸倒数日模式.jpg` |
 | :---: | :---: |
-| ![4.2寸待办模式](docs/images/device-4-2-todo.jpg) | ![4.2寸倒计时模式](docs/images/device-4-2-countdown.jpg) |
+| ![4.2寸待办模式](docs/images/device-4-2-todo.jpg) | ![4.2寸倒数日模式](docs/images/device-4-2-countdown.jpg) |
 
 | `4.2寸内部结构.jpg` |
 | :---: |
@@ -368,7 +368,7 @@ msp/
 │   ├── lunar.c/h                # 农历算法（1900-2100）
 │   ├── timetable.c/h            # 课程表（7×12 网格 + 学期周次）
 │   ├── todo.c/h                 # 待办事项（优先级 + 进度条）
-│   ├── countdown.c/h            # 倒计时
+│   ├── countdown.c/h            # 倒数日
 │   ├── codex_quota.c/h          # Codex / 中转站额度看板
 │   ├── message_board.c/h        # 留言板
 │   ├── canvas_board.c/h         # WYSIWYG 画布留言板
@@ -392,7 +392,7 @@ msp/
 │   ├── config.html              # 配置：WiFi / 轮播 / 天气 / OTA / 低功耗
 │   ├── timetable.html           # 课程表编辑
 │   ├── todo.html                # 待办事项管理
-│   ├── countdown.html           # 倒计时配置
+│   ├── countdown.html           # 倒数日配置
 │   └── board.html               # 画布留言板可视化编辑器
 ├── tools/                       # 辅助脚本
 │   ├── gen_font.py              # 点阵字库生成工具
@@ -448,7 +448,7 @@ msp/
 | 天气 | `/weather_config`, `/weather_show` | 天气配置与显示 |
 | 课程表 | `/timetable.json`, `/timetable`, `/timetable_show` | 课程表管理 |
 | 待办 | `/todo.json`, `/todo`, `/todo_show` | 待办事项管理 |
-| 倒计时 | `/countdown_config`, `/countdown_show` | 倒计时管理 |
+| 倒数日 | `/countdown_config`, `/countdown_show` | 倒数日管理 |
 | Codex 额度 | `/codex_quota_config`, `/codex_quota_show` | 中转站额度配置与显示 |
 | 画布留言板 | `/board`, `/canvas_layout`, `/canvas_show`, `/canvas_icon_upload` | WYSIWYG 画板与素材管理 |
 | 系统 | `/status`, `/version`, `/ota`, `/auth_config`, `/power_config` | 系统管理 |

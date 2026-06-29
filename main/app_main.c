@@ -416,7 +416,7 @@ static void register_display_modes(void) {
                                                 scheduler_show_next_image});
   display_mode_register(&(display_mode_entry_t){"todo", "待办事项", todo_show});
   display_mode_register(
-      &(display_mode_entry_t){"countdown", "倒计时", countdown_show});
+      &(display_mode_entry_t){"countdown", "倒数日", countdown_show});
   display_mode_register(
       &(display_mode_entry_t){"codex", "Coding额度", codex_quota_show});
 }

@@ -3,7 +3,7 @@
 用于 Gitee 仓库右侧「简介」区域：
 
 ```text
-喵哎 MiaooAim / epaper_uploader：ESP32-S3 智能三色墨水屏终端固件。Gitee 提供固件源码、Web 管理端、文档和免编译烧录包；配套 4.2" SSD1619 PCB/外壳已开源到嘉立创。支持图片画廊、天气/时钟/日历、课程表、待办、倒计时、Codex 额度看板、低功耗、OTA 与 Web 配网。ESP-IDF v5.5.x，当前 v2.3.3，非商业许可。
+喵哎 MiaooAim / epaper_uploader：ESP32-S3 智能三色墨水屏终端固件。Gitee 提供固件源码、Web 管理端、文档和免编译烧录包；配套 4.2" SSD1619 PCB/外壳已开源到嘉立创。支持图片画廊、天气/时钟/日历、课程表、待办、倒数日、Codex 额度看板、低功耗、OTA 与 Web 配网。ESP-IDF v5.5.x，当前 v2.3.3，非商业许可。
 ```
 
 主页链接建议：

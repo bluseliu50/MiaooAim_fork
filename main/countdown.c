@@ -107,7 +107,7 @@ static void draw_header(fb_t *fb, int W)
     }
     (void)W;
     ui_draw_page_frame(fb, UI_FRAME_RED_ACCENT | UI_FRAME_THIN);
-    ui_draw_header(fb, "\xe5\x80\x92\xe8\xae\xa1\xe6\x97\xb6", today, true);
+    ui_draw_header(fb, "\xe5\x80\x92\xe6\x95\xb0\xe6\x97\xa5", today, true);
 }
 
 static const char *status_text_for_days(int days)
