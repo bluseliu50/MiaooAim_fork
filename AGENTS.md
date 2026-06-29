@@ -162,7 +162,7 @@ make ruff-check 2>/dev/null || uv run ruff check tools/   # optional lint
 
 - **Host-side unit tests** live in `test/`, run on the ESP-IDF **Linux host target** with the **Unity** framework. Currently only `test/lunar/` covers `main/lunar.c` (pure-C lunar calendar algorithm, no ESP-IDF runtime deps). Tests must **not modify `main/`** — they only add coverage. Extend by adding a subproject that compiles the target `.c` (via relative path `../../../main/xxx.c`) plus `test_xxx.c` with `RUN_TEST(...)`. Only zero-dependency pure-logic modules qualify; modules needing NVS/FreeRTOS/esp_log require mocking or real-device `test_apps`.
 - **No automated lint/CI in repo.** Verification = `idf.py build` (CONTRIBUTING.md requires a successful build before PR; run `idf.py -p COMx flash monitor` to smoke on hardware). Frontend changes should be checked in a mobile browser.
-- **PR discipline** (`CONTRIBUTING.md`): one concern per PR (don't mix driver/UI/docs); never commit `build/`, `sdkconfig`, `managed_components/`, secrets (WiFi passwords, API keys), or personal assets. Screen-adaptation PRs need panel specs, init sequence, BUSY idle level, refresh timing, and a real-device photo/log.
+- **PR discipline** (`CONTRIBUTING.md`): one concern per PR (don't mix driver/UI/docs); never commit `build/`, `sdkconfig`, `managed_components/`, secrets (WiFi passwords, API keys), or personal assets. Screen-adaptation PRs need panel specs, init sequence, BUSY idle level, refresh timing, and a real-device photo/log. **Commit messages MUST be in English** (Conventional Commits style: `type(scope): summary`, e.g. `feat(font): custom/interactive font source`).
 
 ## Screen Adaptation Notes
 
