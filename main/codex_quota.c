@@ -2028,11 +2028,11 @@ static void render_quota_page(const codex_quota_config_t *cfg,
   if (error) {
     ui_draw_empty_state(fb, "额度不可用", error);
     fb_hline(fb, 14, H - 28, W - 28, COLOR_BLACK);
-    fb_utf8_scaled(fb, 20, H - 20, prov, COLOR_BLACK, 1);
+    fb_utf8_scaled(fb, 20, H - 24, prov, COLOR_BLACK, 1);
     char rinfo[24];
     snprintf(rinfo, sizeof(rinfo), "显示时更新");
     int rw = ui_text_width(rinfo, 1);
-    fb_utf8_scaled(fb, W - 18 - rw, H - 20, rinfo, COLOR_BLACK, 1);
+    fb_utf8_scaled(fb, W - 18 - rw, H - 24, rinfo, COLOR_BLACK, 1);
     epd_display_fb_free(fb);
     return;
   }
@@ -2144,9 +2144,9 @@ static void render_quota_page(const codex_quota_config_t *cfg,
   }
 
   /* footer */
-  ui_draw_dotted_hline(fb, 14, H - 30, W - 28, COLOR_BLACK, 4);
+  ui_draw_dotted_hline(fb, 14, H - 28, W - 28, COLOR_BLACK, 4);
   /* provider left, refresh info right (no separator dot) */
-  fb_utf8_scaled(fb, 18, H - 22, prov, COLOR_BLACK, 1);
+  fb_utf8_scaled(fb, 18, H - 24, prov, COLOR_BLACK, 1);
   uint32_t rm = cfg->refresh_min;
   char rinfo[24];
   if (rm > 0)
@@ -2158,9 +2158,9 @@ static void render_quota_page(const codex_quota_config_t *cfg,
   char pg[8];
   snprintf(pg, sizeof(pg), "%d/1", cfg->enabled ? 1 : 0);
   int pgw = ui_text_width(pg, 1);
-  fb_utf8_scaled(fb, W - 18 - pgw - 6 - rinfo_w, H - 22, rinfo, COLOR_BLACK, 1);
-  fb_utf8_scaled(fb, W / 2 - 16, H - 22, "[Zz]", COLOR_BLACK, 1);
-  fb_utf8_scaled(fb, W - 18 - pgw, H - 22, pg, COLOR_BLACK, 1);
+  fb_utf8_scaled(fb, W - 18 - pgw - 6 - rinfo_w, H - 24, rinfo, COLOR_BLACK, 1);
+  fb_utf8_scaled(fb, W / 2 - 16, H - 24, "[Zz]", COLOR_BLACK, 1);
+  fb_utf8_scaled(fb, W - 18 - pgw, H - 24, pg, COLOR_BLACK, 1);
 
   epd_display_fb_free(fb);
 }

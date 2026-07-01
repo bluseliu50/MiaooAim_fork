@@ -189,7 +189,7 @@ static bool render_todo_snapshot(const todo_config_t *cfg, unsigned epoch)
                          (pct >= 100) ? COLOR_BLACK : COLOR_RED);
 
     int list_y = bar_y + 9 * s;
-    int footer_h = 22 * s;
+    int footer_h = 26 * s;
     int avail  = H - list_y - footer_h - 6 * s;
     int item_gap = 4 * s;
     const int min_item_h = 20 * s;

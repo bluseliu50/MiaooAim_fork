@@ -448,7 +448,7 @@ static void tt_draw_footer(fb_t *fb, const char *left, const char *right)
     const int W = fb->width;
     const int H = fb->height;
     const int s = ui_scale_for(fb);
-    const int y = H - 20 * s;
+    const int y = H - 24 * s;
 
     ui_draw_dotted_hline(fb, 12 * s, y - 4 * s, W - 24 * s,
                          COLOR_BLACK, 6);
@@ -535,7 +535,7 @@ static esp_err_t timetable_show_week_grid(const timetable_config_t *cfg,
     int margin = 14 * s;
     int hdr_h = 20 * s;
     int pcol_w = 56;
-    int footer_h = 26 * s;
+    int footer_h = 30 * s;
     int y_start = 34 * s;
     int grid_w = W - 2 * margin;
     if (grid_w < pcol_w + cols)
@@ -808,7 +808,7 @@ esp_err_t timetable_show_day(int day)
     int rm       = 10 * s;
     int bar_w    = 4 * s;
     int bar_gap  = 3 * s;
-    int footer_h = 22 * s;
+    int footer_h = 26 * s;
     int y_top    = 34 * s;
     int avail    = H - y_top - footer_h - 2;
     int block_h  = avail / count;

@@ -1515,7 +1515,7 @@ static void draw_compact_weather_page(fb_t *fb, int W, int H, int MX,
 
     const int content_x = MX;
     const int content_w = W - 2 * MX;
-    const int footer_guard = 34;
+    const int footer_guard = 30 * ui_scale_for(fb);
     int top_y = 34;
     int top_h = 100;
     if (H < 290)
@@ -1684,7 +1684,7 @@ static void render_weather(unsigned epoch)
         const int content_w = W - 2 * MX;
         const int gap = 8;
         const int body_top = 28 * sc;
-        const int body_bottom = H - 27 * sc;
+        const int body_bottom = H - 30 * sc;
         const int top_h = 158;
 
         const int current_w = content_w * 60 / 100;

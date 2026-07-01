@@ -193,7 +193,7 @@ static void cal_layout_build(cal_layout_t *L, int w, int h)
      * grid text at 1x so the page does not become a wall of heavy pixels. */
     L->title_h = 28 * s;
     L->wday_h  = 16 * s;
-    L->footer_h = 26 * s;
+    L->footer_h = 30 * s;
     L->grid_x = mx;
     L->grid_w = w - 2 * mx;
     if (L->grid_w < CAL_GRID_COLS)

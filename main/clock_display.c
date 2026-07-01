@@ -235,7 +235,7 @@ static void clock_draw_footer(fb_t *fb, const char *left, const char *right)
     const int W = fb->width;
     const int H = fb->height;
     const int s = ui_scale_for(fb);
-    const int y = H - 20 * s;
+    const int y = H - 24 * s;
 
     ui_draw_dotted_hline(fb, 12 * s, y - 4 * s, W - 24 * s,
                          COLOR_BLACK, 6);
