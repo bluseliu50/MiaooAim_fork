@@ -25,12 +25,26 @@ Modes are registered via `display_mode_register()` (clock, calendar, timetable, 
 ### Rendering pipeline
 `fb_render.{c,h}` owns a two-plane framebuffer (`fb_t` with `black` + `red` byte arrays, MSB-first, packed 1bpp). `fb_reserve_planes_early()` pre-allocates planes before WiFi/HTTP heap fragmentation — **call it before `http_app_start()`**, and only when SPIFFS mounted. Feature modules draw into an `fb_t`, then `epd_display_from_buffer()` / `epd_display_fb_free()` push it via SPI DMA. Native-yellow panels (JD79668/JD79665) use a third plane only in image conversion; built-in UI pages remain two-plane.
 
+
+### Font rendering pipeline (`main/font_ext.c`, `main/fb_render.c`, `tools/gen_ext_font.py`)
+Text rendering has two tiers:
+1. **External fonts** (`.mef` files in `fontfs` SPIFFS): Unifont (16/32px, native bitmap, 32px via 2× NEAREST) and Fusion Pixel 12px BDF (24px via 2× NEAREST). Loaded into PSRAM at boot. Used for ALL text when fontfs is mounted (scale=1 → cjk16, scale=2 → cjk32, 24px target → cjk24).
+2. **Built-in fallback** (`font_data.h`): Unifont hex rendered into 8×16 ASCII + 16×16 CJK cells, compiled into firmware. Used only when fontfs mount fails.
+
+Key rendering rules:
+- `fb_draw_text_glyph()` routes ALL glyphs (including ASCII) through external fonts when available — the old `scale >= 2 && (prefer_ext || cp >= 0x80)` gate was removed.
+- `choose_px_order()` / `choose_px_order_for_target()` prefer the closest native source (16/24/32px) to minimize runtime scaling.
+- `font_ext_draw_glyph*()` uses dual-row vertical sampling only when the target row spans more than one source row (`sy1 > sy0 + 1`). At integer ratios (1:1, 2:1) it samples exactly one source row to prevent stroke doubling.
+- ASCII glyphs are horizontally centered within their `advance = size//2` half-cell to produce even letter spacing.
+- ASCII baseline is shifted up 1px from CJK baseline to give descenders (g/p/q/y) room.
+- Layout code assumes monospace ASCII (`8*scale`) and full-width CJK (`16*scale`); the `.mef` advance values are calibrated to match (`advance_px = size//2` for ASCII, `size` for CJK).
+
 ### HTTP subsystem
 Routes registered in `main/http_app.c` (~63 method+path combos). HTML pages are embedded into firmware via `EMBED_FILES` in `main/CMakeLists.txt` and referenced through `_binary_*_start`/`_end` asm symbols declared in `main/http_internal.h`. Handlers are split: `http_app.c` (core/auth/OTA/system), `http_gallery.c` (images), `http_features.c` (timetable/todo/countdown/calendar), `http_canvas.c` (canvas board). Shared helpers (`http_send_embedded_html`, `http_read_request_body`, `json_escape`, Basic Auth) live in `http_internal.h` as `static inline` or `extern`.
 
 ### Persistence
 - **NVS** (`nvs` partition, 48KB): PHY, Wi-Fi, per-module config blobs. Use `nvs_throttled_commit()` (from `nvs_utils.h`) instead of raw `nvs_commit()` to protect flash from frequent web auto-saves; call `nvs_flush_all()` before deep sleep.
-- **`fontfs` SPIFFS** (2.875MB, built-in): 16/24/32px CJK bitmap fonts generated at build time.
+- **`fontfs` SPIFFS** (2.875MB, built-in): 16/24/32px CJK bitmap fonts generated at build time from **GNU Unifont** (16px native, 32px ×2 NEAREST) and **Fusion Pixel Font** (12px BDF, 24px ×2 NEAREST). All glyphs fill their cells completely with 2px strokes.
 - **`spiffs` SPIFFS** (3.875MB, user): uploaded images, canvas assets, runtime files. Mount failures do **not** auto-format user data — `spiffs_mount_init()` degrades to AP/Web diagnostics.
 
 ## Key Directories
@@ -50,8 +64,8 @@ Routes registered in `main/http_app.c` (~63 method+path combos). HTML pages are 
 | `main/font_ext.c`, `main/font_data.h` | Font engine + embedded ASCII/CJK bitmaps. |
 | `main/lodepng.c` | Vendored PNG decoder (encoder/disk/ancillary compiled out). |
 | `web/` | Web UI HTML (embedded into firmware at build via `EMBED_FILES`). |
-| `tools/` | Python font-gen scripts (`gen_font.py`, `gen_ext_font.py`, `fetch_open_fonts.py`), BOM/city helpers, `detect_port.sh` (macOS/Linux serial auto-detect for Makefile). |
-| `spiffs_image/fonts/` | Generated font assets (`.mef`) — built, gitignored. |
+| `tools/` | Python font-gen scripts (`gen_font.py`, `gen_ext_font.py`), BOM/city helpers, `detect_port.sh` (macOS/Linux serial auto-detect for Makefile). |
+| `tools/fonts/` | **unifont-16.0.02.hex** (GNU Unifont, OFL+GPL w/ font exception) + **fusion-pixel-12px-monospaced-zh_hans.bdf** (Fusion Pixel, OFL 1.1), with respective licenses. Committed directly — no build-time download needed. |
 | `test/lunar/` | Host-side Unity unit tests for `main/lunar.c` (ESP-IDF Linux target path, needs `idf.py`). |
 | `test/host/` | **ESP-IDF-free** host test runner for `main/lunar.c` (pure `cc`, ships `unity.h`/`sdkconfig.h` shims; `make test-host`). |
 | `hardware/` | BOM notes, wiring diagram. |
@@ -118,7 +132,7 @@ idf.py build
 uv sync --group dev                          # create .venv + install Pillow/openpyxl (once)
 uv run python tools/gen_ext_font.py --help   # any tool runs via `uv run`
 make tools                                   # alias: uv sync --group dev
-make tools-fonts                             # regenerate cjk16/24/32.mef (needs OFL fonts)
+make tools-fonts                             # regenerate cjk16/24/32.mef (needs Unifont + Fusion Pixel)
 make tools-city                              # export QWeather city codes to Excel
 make ruff-check 2>/dev/null || uv run ruff check tools/   # optional lint
 ```
@@ -129,11 +143,10 @@ make ruff-check 2>/dev/null || uv run ruff check tools/   # optional lint
 - **Headers**: `#pragma once` guards. Headers expose typed `*_init()` / `*_get_config()` / `*_set_config()` APIs; structs (e.g. `weather_config_t`, `power_config_t`, `fb_t`) defined in headers.
 - **Concurrency**: FreeRTOS tasks with large stacks for heavy work (weather fetch, EPD repair). Protect shared state with `portMUX_TYPE` spinlocks (e.g. `scheduler.c:s_cfg_mux`) or mutexes. Long loops must yield to avoid task WDT.
 - **Persistence**: NVS for config (`nvs_throttled_commit`), SPIFFS for blobs/files. Writes must tolerate power-loss and corrupt data — read-back-validate, handle `ESP_ERR_NVS_*`.
-- **Display integration**: any module that pushes to the EPD must (a) check `epd_is_ready()`, (b) acquire a display epoch via `display_policy_begin_manual_display()`, (c) check `display_policy_epoch_is_current()` during long renders, (d) use `epd_display_fb_free()` to release framebuffer memory early.
 - **Web handlers**: validate input length, parse JSON defensively, respect Basic Auth (`http_check_basic_auth(req)`), use `http_read_request_body()` + `json_escape()`. Frontend pages store auth in `localStorage` (`epd_auth_u`/`epd_auth_p`) and attach via `epdFetchOpts()`.
 - **Compile flags**: `-Os` size optimization (app partition headroom is tight). `main/CMakeLists.txt` demotes false-positive `-Wformat-truncation`/`-Wformat-overflow` for the app component only; IDF components keep full warnings-as-errors. LodePNG has encoder/disk/ancillary/cpp compiled out to save flash.
 - **Localization**: user-facing strings and logs are bilingual (Chinese comments/strings throughout). Keep `display_mode` label fields (`label_cn`) in sync when adding modes.
-- **Fonts**: built-in UI text uses `fb_utf8_scaled*()` / `fb_number7()` from `font_ext` (SPIFFS `.mef`) with `font_data.h` fallback. Prefer scaled built-in font APIs for consistency.
+- **Fonts**: built-in UI text uses `fb_utf8_scaled*()` / `fb_number7()` from `font_ext` (SPIFFS `.mef`) with `font_data.h` fallback. Font sources: **GNU Unifont** .hex (16px native, 32px ×2 NEAREST) and **Fusion Pixel Font** 12px BDF (24px ×2 NEAREST). ASCII advance = `size//2`, CJK advance = `size`. The C runtime `font_ext_draw_glyph*` uses dual-row sampling only when `sy1 > sy0 + 1` (non-integer ratios). `fetch_open_fonts.py` removed — fonts committed to `tools/fonts/`. Prefer scaled built-in font APIs for consistency.
 
 ## Important Files
 
@@ -142,7 +155,9 @@ make ruff-check 2>/dev/null || uv run ruff check tools/   # optional lint
 | `main/app_main.c` | Entry point (`app_main`), dual boot path orchestration. |
 | `main/CMakeLists.txt` | Source list, `EMBED_FILES` (web HTML), compile flags, target guard. |
 | `main/idf_component.yml` | IDF component manifest (`espressif/mdns`, IDF `>=5.5.1`). |
-| `CMakeLists.txt` (root) | Font generation custom commands, SPIFFS image, version. |
+| `CMakeLists.txt` (root) | Font generation custom commands (16/24/32px Unifont+Fusion `.mef`), SPIFFS image, version. |
+| `tools/gen_ext_font.py` | External `.mef` font generator: parses Unifont .hex (16/32px) and Fusion Pixel BDF (24px, 12px×2), packs to MEF2 format. |
+| `tools/gen_font.py` | Built-in `font_data.h` generator: parses Unifont .hex into 8×16 ASCII + 16×16 CJK cells. |
 | `Makefile` | macOS/Linux build wrapper around `idf.py` (setup/build/flash/monitor/fm/test/test-host/clean/fullclean) + uv tool targets (`tools`/`tools-fonts`/`tools-city`). |
 | `tools/detect_port.sh` | Serial-port auto-detect script used by the Makefile (macOS `/dev/cu.*`, Linux `/dev/ttyACM*`/`/dev/ttyUSB*`). |
 | `pyproject.toml` | Python tooling manifest for uv — dev deps (Pillow, openpyxl), ruff config. `uv sync --group dev` installs. |
@@ -150,7 +165,7 @@ make ruff-check 2>/dev/null || uv run ruff check tools/   # optional lint
 | `test/host/` | ESP-IDF-free host test runner (`unity.h`/`sdkconfig.h` shims + driver); `make test-host`. |
 | `partitions.csv` | 16MB partition layout (factory + ota_0/ota_1 3MB each + coredump + fontfs + spiffs). |
 | `sdkconfig.defaults` | Project defaults: esp32s3, `-Os`, PSRAM octal 80MHz, coredump-to-flash, HTTPS CA bundle (CMN), lwIP tuning. |
-| `main/epd.h` | Panel enum + EPD API (`epd_init`, `epd_display_*`, panel config). |
+| `main/font_ext.c`, `main/font_data.h` | Font engine (`.mef` loader, runtime scaling, dual-row sampler) + embedded ASCII/CJK fallback bitmaps. |
 | `main/fb_render.h` | Framebuffer API + `fb_reserve_planes_early()`. |
 | `main/http_internal.h` | Shared HTTP helpers + embedded HTML blob externs. |
 | `main/display_policy.h` | Display epoch arbitration API. |

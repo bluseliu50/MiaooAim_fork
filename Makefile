@@ -94,7 +94,6 @@ help: ## 显示所有可用目标
 	@printf "  BAUD=921600           指定波特率\n"
 	@printf "  IDF_BUILD_JOBS=8      并发编译任务数（默认 CPU 核心数 = $(NPROC)）\n"
 	@printf "  IDF_CMD=/path/idf.py  手动指定 idf.py 路径（激活异常时用）\n"
-	@printf "  FONT=fz / tools/fonts/xxx.ttf  字库字体源（留空=交互式选择；短名=模糊匹配）\n"
 	@printf "  SIZES=24                        字库字号（默认 16 24 32；测试可用单字号）\n"
 
 idf-check:
@@ -175,42 +174,26 @@ tools: ## 安装 Python 开发依赖到 .venv（uv sync --group dev）
 	$(UV) sync --group dev
 	@printf "$(COLOR_GREEN)[OK] 依赖已就绪。用 'uv run python <script>' 运行工具。$(COLOR_RESET)\n"
 
-# 字体源选择（留空=交互式选择；短名如 fz=模糊匹配；完整路径=直接使用）
-FONT  ?=
+
 # 生成的字号列表（测试某种字体时可用 make tools-fonts SIZES=24）
 SIZES ?= 16 24 32
 
-tools-fonts: ## 生成字库；FONT= 指定/交互选字体，SIZES= 指定字号(默认 16 24 32)
+tools-fonts: fetch-fonts ## 生成字库，SIZES= 指定字号(默认 16 24 32)
 	@printf "$(COLOR_CYAN)[tools-fonts] 生成字库（字号: $(SIZES)）...$(COLOR_RESET)\n"
 	$(UV) run python tools/gen_ext_font.py --help >/dev/null 2>&1 || $(MAKE) tools
-	$(UV) run python tools/fetch_open_fonts.py --out-dir tools/fonts/noto
-	@tmp=$$(mktemp -t epd_font_XXX); \
-	trap 'rm -f "$$tmp"' EXIT; \
-	rc=0; \
-	if [ -n "$(FONT)" ] && [ -f "$(FONT)" ]; then \
-		FONT_VAL="$(FONT)"; \
-	elif [ -n "$(FONT)" ]; then \
-		$(UV) run python tools/pick_font.py --query "$(FONT)" --out "$$tmp" || rc=$$?; \
-		if [ $$rc -ne 0 ]; then printf "$(COLOR_RED)未匹配到字体 '$(FONT)'$(COLOR_RESET)\n"; exit 1; fi; \
-		FONT_VAL=$$(cat "$$tmp"); \
-	else \
-		$(UV) run python tools/pick_font.py --out "$$tmp" </dev/tty || rc=$$?; \
-		if [ $$rc -ne 0 ]; then printf "$(COLOR_RED)未选择字体$(COLOR_RESET)\n"; exit 1; fi; \
-		FONT_VAL=$$(cat "$$tmp"); \
-	fi; \
-	printf "$(COLOR_YELL)使用字体: %s$(COLOR_RESET)\n" "$$FONT_VAL"; \
-	for s in $(SIZES); do \
-		case $$s in \
-			16) thr=104;; 24) thr=110;; 32) thr=118;; 48) thr=124;; 64) thr=128;; \
-			*) thr=118;; \
-		esac; \
-		printf "$(COLOR_CYAN)  生成 $${s}px (threshold=$$thr)...$(COLOR_RESET)\n"; \
-		$(UV) run python tools/gen_ext_font.py --size $$s --font "$$FONT_VAL" \
+	@for s in $(SIZES); do \
+		printf "$(COLOR_CYAN)  生成 $${s}px...$(COLOR_RESET)\n"; \
+		$(UV) run python tools/gen_ext_font.py --size $$s \
 			--out spiffs_image/fonts/cjk$$s.mef --set gb2312 \
-			--threshold $$thr --cjk-stroke 0 --quiet; \
+			--quiet; \
 	done
 	@printf "$(COLOR_GREEN)[OK] 字库已生成到 spiffs_image/fonts/$(COLOR_RESET)\n"
 
+
+fetch-fonts: ## 下载字体源文件（Unifont + Fusion Pixel）
+	@printf "$(COLOR_CYAN)[fetch-fonts] 下载字体源文件...$(COLOR_RESET)\n"
+	$(UV) run python tools/download_fonts.py
+	@printf "$(COLOR_GREEN)[OK] 字体源文件已就绪$(COLOR_RESET)\n"
 tools-font: tools-fonts ## = tools-fonts 的别名（单字号测试：make tools-font SIZES=24 FONT=fz）
 
 tools-city: ## 导出和风天气城市码 Excel（需先 make tools；openpyxl）

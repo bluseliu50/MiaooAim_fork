@@ -65,8 +65,9 @@ outputs/
 .playwright-cli/
 $dst/
 
-# Local font cache used only when regenerating font_data.h
-tools/fonts/
+# Font data files (downloaded by make fetch-fonts, not committed)
+tools/fonts/*.hex
+tools/fonts/*.bdf
 spiffs_image/
 
 # Local reference clones (not part of firmware)

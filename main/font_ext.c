@@ -319,9 +319,11 @@ void font_ext_get_info(font_ext_info_t out[FONT_EXT_COUNT])
 
 static bool choose_px_order(int scale, uint16_t order[FONT_EXT_COUNT])
 {
-    if (scale < 2)
+    if (scale < 1)
         return false;
-    if (scale == 2) {
+    if (scale == 1) {
+        order[0] = 16; order[1] = 24; order[2] = 32;
+    } else if (scale == 2) {
         order[0] = 32; order[1] = 24; order[2] = 16;
     } else {
         order[0] = 32; order[1] = 24; order[2] = 16;
@@ -331,9 +333,11 @@ static bool choose_px_order(int scale, uint16_t order[FONT_EXT_COUNT])
 
 static void choose_px_order_for_target(int target_px, uint16_t order[FONT_EXT_COUNT])
 {
-    if (target_px <= 16) {
+    /* All three sizes (16/24/32) are now native bitmap sources.
+     * Prefer the closest native size to minimize runtime scaling. */
+    if (target_px <= 20) {
         order[0] = 16; order[1] = 24; order[2] = 32;
-    } else if (target_px <= 24) {
+    } else if (target_px <= 28) {
         order[0] = 24; order[1] = 16; order[2] = 32;
     } else {
         order[0] = 32; order[1] = 24; order[2] = 16;
@@ -569,12 +573,28 @@ bool font_ext_draw_glyph(fb_t *fb, int x, int y, uint32_t cp,
     int target_h = 16 * scale;
     int stride = (px + 7) / 8;
     for (int yy = 0; yy < target_h; yy++) {
-        int sy = (yy * px) / target_h;
-        const uint8_t *row = bmp + sy * stride;
-        for (int xx = 0; xx < target_w; xx++) {
-            int sx = (xx * px) / target_w;
-            if (row[sx / 8] & (0x80 >> (sx % 8)))
-                fb_pixel(fb, x + xx, y + yy, c);
+        int sy0 = (yy * px) / target_h;
+        int sy1 = ((yy + 1) * px) / target_h;
+        /* Only sample the second source row when the target row actually
+         * spans a row boundary (non-integer scale ratio). At 1:1 ratio
+         * sy0 == sy1, so we sample exactly one row. */
+        if (sy1 > sy0 + 1 && sy1 < px) {
+            for (int xx = 0; xx < target_w; xx++) {
+                int sx = (xx * px) / target_w;
+                int bit = 0x80 >> (sx % 8);
+                if (bmp[sy0 * stride + sx / 8] & bit) {
+                    fb_pixel(fb, x + xx, y + yy, c);
+                } else if (bmp[sy1 * stride + sx / 8] & bit) {
+                    fb_pixel(fb, x + xx, y + yy, c);
+                }
+            }
+        } else {
+            const uint8_t *row = bmp + sy0 * stride;
+            for (int xx = 0; xx < target_w; xx++) {
+                int sx = (xx * px) / target_w;
+                if (row[sx / 8] & (0x80 >> (sx % 8)))
+                    fb_pixel(fb, x + xx, y + yy, c);
+            }
         }
         if ((yy & 0x0F) == 0x0F)
             vTaskDelay(1);
@@ -630,12 +650,25 @@ bool font_ext_draw_glyph_px(fb_t *fb, int x, int y, uint32_t cp,
         adv_w = target_px;
     int stride = (px + 7) / 8;
     for (int yy = 0; yy < target_px; yy++) {
-        int sy = (yy * px) / target_px;
-        const uint8_t *row = bmp + sy * stride;
-        for (int xx = 0; xx < target_px; xx++) {
-            int sx = (xx * px) / target_px;
-            if (row[sx / 8] & (0x80 >> (sx % 8)))
-                fb_pixel(fb, x + xx, y + yy, c);
+        int sy0 = (yy * px) / target_px;
+        int sy1 = ((yy + 1) * px) / target_px;
+        if (sy1 > sy0 + 1 && sy1 < px) {
+            for (int xx = 0; xx < target_px; xx++) {
+                int sx = (xx * px) / target_px;
+                int bit = 0x80 >> (sx % 8);
+                if (bmp[sy0 * stride + sx / 8] & bit) {
+                    fb_pixel(fb, x + xx, y + yy, c);
+                } else if (bmp[sy1 * stride + sx / 8] & bit) {
+                    fb_pixel(fb, x + xx, y + yy, c);
+                }
+            }
+        } else {
+            const uint8_t *row = bmp + sy0 * stride;
+            for (int xx = 0; xx < target_px; xx++) {
+                int sx = (xx * px) / target_px;
+                if (row[sx / 8] & (0x80 >> (sx % 8)))
+                    fb_pixel(fb, x + xx, y + yy, c);
+            }
         }
         if ((yy & 0x0F) == 0x0F)
             vTaskDelay(1);

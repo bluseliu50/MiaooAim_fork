@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
-"""Generate external MEF bitmap fonts for large e-paper UI text.
+"""Generate external MEF bitmap fonts for e-paper UI text.
+
+Uses two native bitmap font sources (no Pillow rasterization needed):
+- Unifont .hex (16px native, ×2 for 32px) for cjk16.mef and cjk32.mef
+- Fusion Pixel 12px .bdf (×2 for 24px) for cjk24.mef
 
 MEF2 format:
   4 bytes  magic "MEF2"
-  u16le    square glyph pixel size, e.g. 48
+  u16le    square glyph pixel size
   u16le    bytes per glyph: ((size + 7) // 8) * size
   u32le    glyph count
   repeated sorted records:
     u32le  Unicode codepoint
-    u8     glyph advance in source pixels
+    u8     glyph advance in source pixels (CJK=size, ASCII=size//2)
     bytes  horizontal MSB-first 1bpp bitmap, 1 = ink
 """
 
@@ -22,34 +26,10 @@ import sys
 import time
 from pathlib import Path
 
-
-FONT_CANDIDATES = [
-    "tools/fonts/FZPingXianYaSong.ttf",
-    "tools/fonts/noto/LXGW975YuanSC-400W.ttf",
-    "tools/fonts/noto/LXGW975YuanSC-500W.ttf",
-    "tools/fonts/noto/ResourceHanRoundedCN-Medium.ttf",
-    "C:/Windows/Fonts/msyhbd.ttc",
-    "C:/Windows/Fonts/simhei.ttf",
-    "C:/Windows/Fonts/msyh.ttc",
-    "C:/Windows/Fonts/Deng.ttf",
-    "C:/Windows/Fonts/Dengl.ttf",
-    "C:/Windows/Fonts/msyhl.ttc",
-    "C:/Windows/Fonts/simsun.ttc",
-]
-
-ASCII_FONT_CANDIDATES = [
-    "tools/fonts/FZPingXianYaSong.ttf",
-    "tools/fonts/noto/LXGW975YuanSC-400W.ttf",
-    "tools/fonts/noto/LXGW975YuanSC-500W.ttf",
-    "tools/fonts/noto/NotoSansMono-Regular.ttf",
-    "C:/Windows/Fonts/comicbd.ttf",
-    "C:/Windows/Fonts/segoeprb.ttf",
-    "C:/Windows/Fonts/mvboli.ttf",
-    "C:/Windows/Fonts/Inkfree.ttf",
-    "C:/Windows/Fonts/arialbd.ttf",
-]
-
 ASCII_PRINTABLE = "".join(chr(code) for code in range(32, 127))
+
+UNIFONT_HEX = str(Path(__file__).resolve().parent.parent / "tools/fonts/unifont-16.0.02.hex")
+FUSION_BDF = str(Path(__file__).resolve().parent.parent / "tools/fonts/fusion-pixel-12px-monospaced-zh_hans.bdf")
 
 
 def load_gen_font_module():
@@ -60,13 +40,6 @@ def load_gen_font_module():
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
-
-
-def ensure_pillow():
-    try:
-        from PIL import Image, ImageDraw, ImageFont  # noqa: F401
-    except ImportError as exc:
-        raise SystemExit("Pillow is required: python -m pip install Pillow") from exc
 
 
 def load_extra_chars(path: Path) -> str:
@@ -83,50 +56,6 @@ def load_extra_chars(path: Path) -> str:
     return "".join(chars)
 
 
-def resolve_font_path(path: str | None) -> str | None:
-    if not path:
-        return None
-    p = Path(path)
-    if p.is_absolute():
-        return str(p)
-    project_dir = Path(__file__).resolve().parent.parent
-    return str(project_dir / p)
-
-
-def choose_font(explicit: str | None, pixel_size: int):
-    from PIL import ImageFont
-
-    candidates = [explicit] if explicit else []
-    candidates.extend(FONT_CANDIDATES)
-    for fp in candidates:
-        fp = resolve_font_path(fp)
-        if not fp:
-            continue
-        if os.path.exists(fp):
-            try:
-                return ImageFont.truetype(fp, pixel_size), fp
-            except Exception:
-                continue
-    raise SystemExit("No usable CJK font found. Use --font C:/path/font.ttf")
-
-
-def choose_ascii_font(explicit: str | None, pixel_size: int):
-    from PIL import ImageFont
-
-    candidates = [explicit] if explicit else []
-    candidates.extend(ASCII_FONT_CANDIDATES)
-    for fp in candidates:
-        fp = resolve_font_path(fp)
-        if not fp:
-            continue
-        if os.path.exists(fp):
-            try:
-                return ImageFont.truetype(fp, pixel_size), fp
-            except Exception:
-                continue
-    return choose_font(None, pixel_size)
-
-
 def build_charset(which: str) -> list[str]:
     src = load_gen_font_module()
     tools_dir = Path(__file__).resolve().parent
@@ -140,85 +69,181 @@ def build_charset(which: str) -> list[str]:
     return sorted(dict.fromkeys(chars), key=ord)
 
 
-def glyph_advance(font, ch: str, size: int, glyph_w: int) -> int:
-    cp = ord(ch)
-    if cp >= 0x80:
-        return size
-    try:
-        adv = int(round(font.getlength(ch)))
-    except Exception:
-        adv = glyph_w
-    if glyph_w > 0:
-        adv = max(adv, glyph_w + 2)
-    if adv < 1:
-        adv = max(1, size // 4)
-    if adv > size:
-        adv = size
-    return adv
+# ── Unifont .hex parser ──────────────────────────────────────────────────
+
+def load_unifont_hex(path: str, needed_cps: set[int]) -> dict[int, list[int]]:
+    """Parse Unifont .hex file. Returns {codepoint: 32 bytes (16x16 1bpp)}.
+    Only loads codepoints in needed_cps."""
+    glyphs: dict[int, list[int]] = {}
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or ":" not in line:
+                continue
+            cp_str, hex_str = line.split(":", 1)
+            cp = int(cp_str, 16)
+            if cp not in needed_cps:
+                continue
+            raw = bytes.fromhex(hex_str)
+            if len(raw) == 32:
+                glyphs[cp] = list(raw)
+            elif len(raw) == 16:
+                # Narrow glyph (8px wide) — expand to 16px wide
+                expanded = []
+                for i in range(16):
+                    b = raw[i] if i < len(raw) else 0
+                    expanded.append(b)
+                    expanded.append(0)
+                glyphs[cp] = expanded
+    return glyphs
 
 
-def pack_glyph(font, ch: str, size: int, threshold: int,
-               cjk_stroke: int, cjk_expand: int) -> tuple[int, bytes]:
-    from PIL import Image, ImageDraw
+def pack_unifont_glyph(raw: list[int], target_size: int, is_cjk: bool) -> tuple[int, bytes]:
+    """Pack a 16px Unifont glyph into target_size cell.
+    16px = native 1:1. 32px = 2× NEAREST upscale (fills cell completely)."""
+    advance = target_size if is_cjk else (target_size // 2)
+    scale = target_size // 16
 
-    canvas = Image.new("L", (size, size), 0)
-    probe = ImageDraw.Draw(Image.new("L", (size * 3, size * 3), 0))
-    is_cjk = ord(ch) >= 0x80
-    stroke = cjk_stroke if is_cjk else 0
-    bb = probe.textbbox((0, 0), ch, font=font, stroke_width=stroke)
-    gw = max(0, bb[2] - bb[0])
-    gh = max(0, bb[3] - bb[1])
-    advance = glyph_advance(font, ch, size, gw)
-    if gw == 0 or gh == 0:
-        return advance, bytes(((size + 7) // 8) * size)
+    stride = (target_size + 7) // 8
+    out = bytearray(stride * target_size)
 
-    glyph = Image.new("L", (gw, gh), 0)
-    draw = ImageDraw.Draw(glyph)
-    draw.text((-bb[0], -bb[1]), ch, font=font, fill=255,
-              stroke_width=stroke, stroke_fill=255)
+    for ty in range(target_size):
+        sy = ty // scale
+        if sy >= 16:
+            continue
+        src_byte_lo = raw[sy * 2]
+        src_byte_hi = raw[sy * 2 + 1]
+        for tx in range(target_size):
+            sx = tx // scale
+            if sx < 8:
+                bit = src_byte_lo & (0x80 >> sx)
+            else:
+                bit = src_byte_hi & (0x80 >> (sx - 8))
+            if bit:
+                out[ty * stride + tx // 8] |= 0x80 >> (tx % 8)
 
-    max_w = max(1, size - 2)
-    max_h = max(1, size - 2)
-    if ord(ch) < 0x80:
-        max_w = max(1, advance - 1)
-    if gw > max_w or gh > max_h:
-        ratio = min(max_w / gw, max_h / gh)
-        nw = max(1, round(gw * ratio))
-        nh = max(1, round(gh * ratio))
-        glyph = glyph.resize((nw, nh), Image.Resampling.LANCZOS)
-        gw, gh = glyph.size
-
-    if ord(ch) < 0x80:
-        x = 1
-    else:
-        x = (size - gw) // 2
-    y = (size - gh) // 2
-    canvas.paste(glyph, (x, y))
-
-    if is_cjk and cjk_expand > 0:
-        from PIL import ImageFilter
-        for _ in range(cjk_expand):
-            canvas = canvas.filter(ImageFilter.MaxFilter(3))
-
-    stride = (size + 7) // 8
-    out = bytearray(stride * size)
-    pix = canvas.load()
-    for yy in range(size):
-        row_off = yy * stride
-        for xx in range(size):
-            if pix[xx, yy] >= threshold:
-                out[row_off + xx // 8] |= 0x80 >> (xx % 8)
     return advance, bytes(out)
 
+
+# ── Fusion Pixel BDF parser ──────────────────────────────────────────────
+
+def load_fusion_bdf(path: str, needed_cps: set[int]) -> dict[int, dict]:
+    """Parse Fusion Pixel 12px monospaced BDF. Returns {codepoint: glyph_dict}.
+    glyph_dict = {'dwidth': int, 'bbx': (w,h,xoff,yoff), 'bitmap': [hex_rows]}"""
+    glyphs: dict[int, dict] = {}
+    with open(path, "r", encoding="utf-8") as f:
+        in_glyph = False
+        cur_cp = -1
+        cur_dwidth = 12
+        cur_bbx = None
+        cur_bitmap: list[str] = []
+
+        for line in f:
+            line = line.strip()
+            if line.startswith("STARTCHAR"):
+                in_glyph = True
+                cur_cp = -1
+                cur_dwidth = 12
+                cur_bbx = None
+                cur_bitmap = []
+            elif line.startswith("ENCODING"):
+                cur_cp = int(line.split()[1])
+            elif line.startswith("DWIDTH"):
+                parts = line.split()
+                cur_dwidth = int(parts[1])
+            elif line.startswith("BBX"):
+                parts = line.split()
+                cur_bbx = (int(parts[1]), int(parts[2]), int(parts[3]), int(parts[4]))
+            elif line == "BITMAP":
+                pass
+            elif line == "ENDCHAR":
+                if cur_cp >= 0 and cur_cp in needed_cps and cur_bbx:
+                    glyphs[cur_cp] = {
+                        "dwidth": cur_dwidth,
+                        "bbx": cur_bbx,
+                        "bitmap": cur_bitmap[:],
+                    }
+                in_glyph = False
+            elif in_glyph and cur_bbx:
+                cur_bitmap.append(line)
+    return glyphs
+
+
+def pack_fusion_glyph(glyph: dict, target_size: int = 24) -> tuple[int, bytes]:
+    """Pack a 12px Fusion Pixel BDF glyph into 24px cell via 2× NEAREST upscale.
+    Fills the cell completely. Stroke doubling is handled by the source design."""
+    bbx = glyph["bbx"]
+    bw, bh, xoff, yoff = bbx
+    hex_rows = glyph["bitmap"]
+    dwidth = glyph["dwidth"]
+
+    bytes_per_row = (bw + 7) // 8
+    pixels: list[list[int]] = []
+    for row_hex in hex_rows:
+        row_hex = row_hex.strip()
+        if not row_hex:
+            raw = bytes(bytes_per_row)
+        else:
+            try:
+                raw = bytes.fromhex(row_hex)
+            except ValueError:
+                raw = bytes(bytes_per_row)
+        row = []
+        for x in range(bw):
+            byte_idx = x // 8
+            bit_idx = 7 - (x % 8)
+            if byte_idx < len(raw):
+                row.append(1 if raw[byte_idx] & (1 << bit_idx) else 0)
+            else:
+                row.append(0)
+        pixels.append(row)
+
+    is_cjk = dwidth >= 12
+    advance = target_size if is_cjk else (target_size // 2)
+    scale = target_size // 12  # 2 for 24px
+
+    # Compute glyph placement in SOURCE (12px) coordinates.
+    baseline_src = 10  # FONT_ASCENT from BDF
+    glyph_top_src = baseline_src - (yoff + bh)
+    glyph_left_src = xoff
+
+    if not is_cjk:
+        glyph_w_scaled = bw * scale
+        target_left = max(0, (advance - glyph_w_scaled) // 2)
+        glyph_left_src = target_left // scale
+
+    stride = (target_size + 7) // 8
+    out = bytearray(stride * target_size)
+
+    for sy in range(bh):
+        ty = (glyph_top_src + sy) * scale
+        if ty < 0 or ty >= target_size:
+            continue
+        for sx in range(bw):
+            if not pixels[sy][sx]:
+                continue
+            tx = (glyph_left_src + sx) * scale
+            for dy in range(scale):
+                yy = ty + dy
+                if yy < 0 or yy >= target_size:
+                    continue
+                for dx in range(scale):
+                    xx = tx + dx
+                    if xx < 0 or xx >= target_size:
+                        continue
+                    out[yy * stride + xx // 8] |= 0x80 >> (xx % 8)
+
+    return advance, bytes(out)
+
+
+# ── Main ─────────────────────────────────────────────────────────────────
 
 def replace_output(tmp_path: Path, out_path: Path) -> None:
     for attempt in range(6):
         try:
-            if out_path.exists():
-                out_path.unlink()
-            tmp_path.replace(out_path)
+            os.replace(str(tmp_path), str(out_path))
             return
-        except PermissionError:
+        except OSError:
             if attempt == 5:
                 raise
             time.sleep(0.2 * (attempt + 1))
@@ -226,67 +251,64 @@ def replace_output(tmp_path: Path, out_path: Path) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--size", type=int, choices=(16, 24, 32, 48, 64), required=True)
+    parser.add_argument("--size", type=int, choices=(16, 24, 32), required=True)
     parser.add_argument("--out", required=True)
-    parser.add_argument("--font")
-    parser.add_argument("--ascii-font")
     parser.add_argument("--set", choices=("level1", "gb2312", "extra"), default="gb2312")
-    parser.add_argument("--threshold", type=int, default=130)
-    parser.add_argument("--cjk-stroke", type=int, default=0,
-                        help="extra CJK stroke width before 1bpp packing")
-    parser.add_argument("--cjk-expand", type=int, default=0,
-                        help="extra 1px CJK grayscale expansion passes")
-    parser.add_argument("--require-open-fonts", action="store_true")
     parser.add_argument("--quiet", action="store_true")
     args = parser.parse_args()
 
-    ensure_pillow()
-    if args.require_open_fonts:
-        project_dir = Path(__file__).resolve().parent.parent
-        required = [
-            project_dir / "tools/fonts/noto/LXGW975YuanSC-400W.ttf",
-            project_dir / "tools/fonts/noto/NotoSansMono-Regular.ttf",
-        ]
-        missing = [str(path) for path in required if not path.exists()]
-        if missing:
-            raise SystemExit("Required open fonts are missing: " + ", ".join(missing))
+
+
     chars = build_charset(args.set)
-    # Use a slightly smaller font size than the square cell to keep dense CJK
-    # glyphs away from UI grid lines on e-paper. The 24px test size needs a
-    # fuller source glyph; otherwise round corners collapse after 1bpp packing.
-    if args.size <= 16:
-        cjk_font_px = args.size
-        ascii_font_px = args.size
-    elif args.size <= 24:
-        cjk_font_px = max(8, args.size - 2)
-        ascii_font_px = max(8, args.size - 2)
-    else:
-        cjk_font_px = max(8, args.size - (6 if args.size >= 48 else 4))
-        ascii_font_px = max(8, args.size - (5 if args.size >= 48 else 3))
-    cjk_font, font_path = choose_font(args.font, cjk_font_px)
-    ascii_font, ascii_font_path = choose_ascii_font(args.ascii_font,
-                                                    ascii_font_px)
+    needed_cps = {ord(ch) for ch in chars}
+
+    if args.size in (16, 32):
+        # Unifont source
+        unifont = load_unifont_hex(UNIFONT_HEX, needed_cps)
+        missing = [ch for ch in chars if ord(ch) not in unifont]
+        if missing:
+            print(f"WARNING: {len(missing)} chars missing from Unifont (first: {''.join(missing[:10])})",
+                  file=sys.stderr)
+    elif args.size == 24:
+        # Fusion Pixel BDF source
+        fusion = load_fusion_bdf(FUSION_BDF, needed_cps)
+        missing = [ch for ch in chars if ord(ch) not in fusion]
+        if missing:
+            print(f"WARNING: {len(missing)} chars missing from Fusion Pixel (first: {''.join(missing[:10])})",
+                  file=sys.stderr)
+
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-
     glyph_bytes = ((args.size + 7) // 8) * args.size
     tmp_path = out_path.with_suffix(out_path.suffix + ".tmp")
+
     with tmp_path.open("wb") as f:
         f.write(b"MEF2")
         f.write(struct.pack("<HHI", args.size, glyph_bytes, len(chars)))
         for ch in chars:
-            f.write(struct.pack("<I", ord(ch)))
-            font = ascii_font if ord(ch) < 0x80 else cjk_font
-            advance, bitmap = pack_glyph(font, ch, args.size, args.threshold,
-                                         args.cjk_stroke, args.cjk_expand)
+            cp = ord(ch)
+            f.write(struct.pack("<I", cp))
+            if args.size in (16, 32):
+                is_cjk = cp >= 0x80
+                if cp in unifont:
+                    advance, bitmap = pack_unifont_glyph(unifont[cp], args.size, is_cjk)
+                else:
+                    advance = args.size if is_cjk else (args.size // 2)
+                    bitmap = bytes(glyph_bytes)
+            else:  # 24
+                if cp in fusion:
+                    advance, bitmap = pack_fusion_glyph(fusion[cp], args.size)
+                else:
+                    is_cjk = cp >= 0x80
+                    advance = args.size if is_cjk else (args.size // 2)
+                    bitmap = bytes(glyph_bytes)
             f.write(struct.pack("<B", advance))
             f.write(bitmap)
+
     replace_output(tmp_path, out_path)
 
     if not args.quiet:
         print(f"Generated {out_path}")
-        print(f"  CJK source: {font_path}")
-        print(f"  ASCII source: {ascii_font_path}")
         print(f"  size: {args.size}px, glyphs: {len(chars)}, bytes: {out_path.stat().st_size}")
     return 0
 

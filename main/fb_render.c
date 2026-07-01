@@ -724,7 +724,7 @@ static bool fb_draw_text_glyph(fb_t *fb, int x, int y, int cp,
                                fb_color_t c, int scale, bool prefer_ext,
                                bool allow_ext, int *adv)
 {
-    bool use_ext = allow_ext && scale >= 2 && (prefer_ext || cp >= 0x80);
+    bool use_ext = allow_ext;
     if (use_ext &&
         font_ext_draw_glyph(fb, x, y, (uint32_t)cp, c, scale, adv)) {
         return true;
@@ -751,7 +751,7 @@ static int fb_text_glyph_advance_internal(int cp, int scale, bool prefer_ext,
                                           bool allow_ext)
 {
     int adv = 0;
-    bool use_ext = allow_ext && scale >= 2 && (prefer_ext || cp >= 0x80);
+    bool use_ext = allow_ext;
     if (use_ext)
         (void)font_ext_probe_glyph((uint32_t)cp, scale, &adv);
     if (adv <= 0)
